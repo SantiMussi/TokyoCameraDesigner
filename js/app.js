@@ -244,23 +244,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 2. Función para exportar un canvas limpiando el fondo temporalmente
         const exportCleanCanvasBase64 = () => {
-            // Guardamos el background actual
             const tempBg = canvas.backgroundColor;
             const tempOverlay = canvas.overlayImage;
 
-            // Forzamos transparente y quitamos overaly original
             canvas.backgroundColor = null;
             canvas.overlayImage = null;
             canvas.renderAll();
 
-            // Exportamos
             const dataUrl = canvas.toDataURL({
                 format: 'png',
                 quality: 1,
-                multiplier: 4 // Alta resolución de impresión solicitada
+                multiplier: 4 // Alta resolución
             });
 
-            // Restauramos
             canvas.backgroundColor = tempBg;
             canvas.overlayImage = tempOverlay;
             canvas.renderAll();
@@ -268,28 +264,104 @@ document.addEventListener('DOMContentLoaded', () => {
             return dataUrl;
         };
 
-        // 3. Exportar cara activa
+        const exportMockupCanvasBase64 = () => {
+            const tempBg = canvas.backgroundColor;
+            canvas.backgroundColor = null; // Para que el borde de la cámara sea transparente
+            canvas.renderAll();
+
+            const dataUrl = canvas.toDataURL({
+                format: 'png',
+                quality: 1,
+                multiplier: 2 // Resolución moderada para mockup
+            });
+
+            canvas.backgroundColor = tempBg;
+            canvas.renderAll();
+
+            return dataUrl;
+        };
+
+        const generateCombinedMockup = async (frenteB64, dorsoB64) => {
+            const c = document.createElement('canvas');
+            c.width = 1000;
+            c.height = 1600;
+            const ctx = c.getContext('2d');
+
+            // Fondo rosa
+            ctx.fillStyle = '#ff7bb4';
+            ctx.fillRect(0, 0, c.width, c.height);
+
+            // Estrellitas amarillas
+            ctx.fillStyle = '#faff60';
+            const drawStar = (x, y, r) => {
+                ctx.beginPath();
+                for (let i = 0; i < 5; i++) {
+                    ctx.lineTo(x + Math.cos((18 + i * 72) / 180 * Math.PI) * r, y - Math.sin((18 + i * 72) / 180 * Math.PI) * r);
+                    ctx.lineTo(x + Math.cos((54 + i * 72) / 180 * Math.PI) * (r / 2.5), y - Math.sin((54 + i * 72) / 180 * Math.PI) * (r / 2.5));
+                }
+                ctx.closePath();
+                ctx.fill();
+            };
+
+            const stars = [
+                [100, 100, 25], [880, 180, 25], [120, 460, 22], [900, 680, 22],
+                [80, 800, 20], [920, 1050, 25], [150, 1200, 30], [860, 1400, 20],
+                [500, 40, 20], [550, 1550, 22], [200, 700, 15]
+            ];
+            stars.forEach(s => drawStar(s[0], s[1], s[2]));
+
+            // Texto MOCK UP
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 50px "Arial Rounded MT Bold", "Varela Round", sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText("MOCK UP", 960, 90);
+
+            const loadImg = (src) => new Promise(res => {
+                const img = new Image(); img.onload = () => res(img); img.src = src;
+            });
+            const fImg = await loadImg(frenteB64);
+            const dImg = await loadImg(dorsoB64);
+
+            const targetW = 850;
+            let scale = targetW / fImg.width;
+            let targetH = fImg.height * scale;
+
+            // Dibujar Frente en top
+            ctx.drawImage(fImg, (c.width - targetW) / 2, 200, targetW, targetH);
+
+            scale = targetW / dImg.width;
+            let targetHDorso = dImg.height * scale;
+
+            // Dibujar Dorso abajo
+            ctx.drawImage(dImg, (c.width - targetW) / 2, 200 + targetH + 150, targetW, targetHDorso);
+
+            return c.toDataURL('image/png', 0.9);
+        };
+
+        // 3. Exportar cara activa (ambos formatos)
         const activeFace = state.face;
         const otherFace = activeFace === 'FRENTE' ? 'DORSO' : 'FRENTE';
 
-        const activeFaceBase64 = exportCleanCanvasBase64();
+        const activeFaceCleanBase64 = exportCleanCanvasBase64();
+        const activeFaceMockupBase64 = exportMockupCanvasBase64();
 
         // 4. Movernos "silenciosamente" a la otra cara para exportarla
-        // Primero guardamos lo de la cara actual
         const activeKey = `${state.model}-${activeFace}`;
         const otherKey = `${state.model}-${otherFace}`;
         savedDesigns[activeKey] = canvas.getObjects().map(obj => obj.toObject());
 
         canvas.clear();
-        let otherFaceBase64 = null;
+        let otherFaceCleanBase64 = null;
+        let otherFaceMockupBase64 = null;
 
         await new Promise((resolve) => {
             if (savedDesigns[otherKey] && savedDesigns[otherKey].length > 0) {
                 fabric.util.enlivenObjects(savedDesigns[otherKey], (objects) => {
                     objects.forEach(obj => canvas.add(obj));
                     canvas.renderAll();
-                    // Exportar sin fondo
-                    otherFaceBase64 = exportCleanCanvasBase64();
+                    // Exportar ambos
+                    otherFaceCleanBase64 = exportCleanCanvasBase64();
+                    otherFaceMockupBase64 = exportMockupCanvasBase64();
                     resolve();
                 });
             } else {
@@ -312,12 +384,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // 5.5 Generar el Mockup Combinado
+        const frenteMockup = activeFace === 'FRENTE' ? activeFaceMockupBase64 : otherFaceMockupBase64;
+        const dorsoMockup = activeFace === 'DORSO' ? activeFaceMockupBase64 : otherFaceMockupBase64;
+        const finalMockupBase64 = await generateCombinedMockup(frenteMockup, dorsoMockup);
+
         // 6. Preparar JSON y enviar al backend PHP
         const payload = {
             modelo: state.model,
             storage: state.storage,
-            imagen_frente: activeFace === 'FRENTE' ? activeFaceBase64 : otherFaceBase64,
-            imagen_dorso: activeFace === 'DORSO' ? activeFaceBase64 : otherFaceBase64
+            imagen_frente: activeFace === 'FRENTE' ? activeFaceCleanBase64 : otherFaceCleanBase64,
+            imagen_dorso: activeFace === 'DORSO' ? activeFaceCleanBase64 : otherFaceCleanBase64,
+            mockup: finalMockupBase64
         };
 
         try {
@@ -330,8 +408,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
 
             if (result.success) {
-                alert('¡Diseño enviado a impresión correctamente!');
-                console.log('Ruta del PDF:', result.pdf_url);
+                alert('¡Diseño guardado correctamente en tu carpeta de pedidos!');
+                console.log('Carpeta del pedido:', result.folder_url);
             } else {
                 alert('Hubo un error en el servidor: ' + result.error);
                 console.error(result.error);
