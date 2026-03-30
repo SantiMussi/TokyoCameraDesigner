@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadTemplate();
 
-    // 5. Controles de UI (Botones laterales)
+    // 5. Controles de UI (Modelos, Caras y Cantidad)
     document.querySelectorAll('.model-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.target.value = '';
     });
 
-    // 7. Soporte para Borrar (Tecla Delete/Backspace)
+    // 7. Borrar objetos con teclado
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Delete' || e.key === 'Backspace') {
             const activeObj = canvas.getActiveObject();
@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 8. FLUJO DE FINALIZACIÓN (Sidebar -> Modal)
+    // 8. FLUJO DE FINALIZACIÓN (Side bar abre el Modal)
     const finishBtn = document.getElementById('finishDesignBtn');
     const checkoutModal = document.getElementById('checkoutModal');
     const confirmOrderBtn = document.getElementById('confirmOrderBtn');
@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
         checkoutModal.style.display = 'flex';
     });
 
-    // 9. LÓGICA DE GUARDADO (Confirmación en el Modal)
+    // 9. LÓGICA DE GUARDADO (Botón dentro del Modal)
     confirmOrderBtn.addEventListener('click', async () => {
         const nameVal = document.getElementById('clientName').value;
         const emailVal = document.getElementById('clientEmail').value;
@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
         confirmOrderBtn.innerHTML = 'Guardando pedido...';
         confirmOrderBtn.disabled = true;
 
-        // Funciones de exportación interna
+        // Exportar cara limpia para impresión
         const exportCleanCanvasBase64 = () => {
             const tempBg = canvas.backgroundColor;
             const tempOverlay = canvas.overlayImage;
@@ -194,6 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return dataUrl;
         };
 
+        // Exportar cara con cámara para Mockup
         const exportMockupCanvasBase64 = () => {
             const tempBg = canvas.backgroundColor;
             canvas.backgroundColor = null;
@@ -204,27 +205,33 @@ document.addEventListener('DOMContentLoaded', () => {
             return dataUrl;
         };
 
+        // Generar Mockup combinado en FONDO BLANCO
         const generateCombinedMockup = async (frenteB64, dorsoB64) => {
             const c = document.createElement('canvas');
-            c.width = 1000; c.height = 1500;
+            c.width = 1000; c.height = 1600;
             const ctx = c.getContext('2d');
-            // Fondo Rosa y Estrellas
-            ctx.fillStyle = '#ff7bb4'; ctx.fillRect(0, 0, c.width, c.height);
-            ctx.fillStyle = '#faff60';
-            const stars = [[100, 100, 20], [900, 150, 25], [150, 500, 15], [850, 800, 20], [100, 1200, 30]];
-            stars.forEach(s => {
-                ctx.beginPath();
-                for (let i = 0; i < 5; i++) {
-                    ctx.lineTo(s[0] + Math.cos((18 + i * 72) / 180 * Math.PI) * s[2], s[1] - Math.sin((18 + i * 72) / 180 * Math.PI) * s[2]);
-                    ctx.lineTo(s[0] + Math.cos((54 + i * 72) / 180 * Math.PI) * (s[2] / 2.5), s[1] - Math.sin((54 + i * 72) / 180 * Math.PI) * (s[2] / 2.5));
-                }
-                ctx.closePath(); ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, c.width, c.height);
+
+            const loadImg = (src) => new Promise(res => {
+                if (!src) return res(null);
+                const img = new Image(); img.onload = () => res(img); img.src = src;
             });
-            const loadImg = (src) => new Promise(res => { const img = new Image(); img.onload = () => res(img); img.src = src; });
-            const fImg = await loadImg(frenteB64); const dImg = await loadImg(dorsoB64);
-            ctx.drawImage(fImg, 100, 250, 800, fImg.height * (800 / fImg.width));
-            ctx.drawImage(dImg, 100, 850, 800, dImg.height * (800 / dImg.width));
-            return c.toDataURL('image/png');
+
+            const fImg = await loadImg(frenteB64);
+            const dImg = await loadImg(dorsoB64);
+
+            const targetW = 850;
+            if (fImg) {
+                let scale = targetW / fImg.width;
+                ctx.drawImage(fImg, (c.width - targetW) / 2, 200, targetW, fImg.height * scale);
+            }
+            if (dImg) {
+                let scale = targetW / dImg.width;
+                ctx.drawImage(dImg, (c.width - targetW) / 2, 900, targetW, dImg.height * scale);
+            }
+            return c.toDataURL('image/png', 0.9);
         };
 
         const activeFace = state.face;
@@ -232,11 +239,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeKey = `${state.model}-${activeFace}`;
         const otherKey = `${state.model}-${otherFace}`;
 
+        // Guardar diseño actual
         savedDesigns[activeKey] = canvas.getObjects().map(obj => obj.toObject());
         const activeClean = exportCleanCanvasBase64();
         const activeMock = exportMockupCanvasBase64();
 
-        // Proceso silencioso para la otra cara
+        // Proceso silencioso para exportar la otra cara
         canvas.clear();
         state.face = otherFace;
         let otherClean, otherMock;
@@ -255,11 +263,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+        // Generar Mockup Final
         const finalMockup = await generateCombinedMockup(
             activeFace === 'FRENTE' ? activeMock : otherMock,
             activeFace === 'DORSO' ? activeMock : otherMock
         );
 
+        // Capturar imágenes originales individuales
         const usedImages = [];
         [activeKey, otherKey].forEach(k => {
             (savedDesigns[k] || []).forEach(o => { if (o.type === 'image') usedImages.push(o.src); });
@@ -281,17 +291,19 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const res = await resp.json();
             if (res.success) {
-                alert(`¡Pedido guardado! Orden: ${res.id_orden}`);
+                alert(`¡Pedido guardado exitosamente! Tu orden es: ${res.id_orden}`);
                 checkoutModal.style.display = 'none';
             } else { alert("Error: " + res.error); }
-        } catch (e) { alert("Error de conexión"); }
+        } catch (e) { alert("Error de conexión con el servidor"); }
 
-        confirmOrderBtn.innerHTML = originalText;
+        confirmOrderBtn.innerHTML = 'GUARDAR Y FINALIZAR';
         confirmOrderBtn.disabled = false;
     });
 
-    // 10. Zoom Controls
+    // 10. Controles de Zoom
     let workspaceZoom = 1;
     document.getElementById('zoomInBtn').addEventListener('click', () => { if (workspaceZoom < 3) { workspaceZoom += 0.2; wrapper.style.transform = `scale(${workspaceZoom})`; document.getElementById('zoomVal').textContent = `${Math.round(workspaceZoom * 100)}%`; } });
     document.getElementById('zoomOutBtn').addEventListener('click', () => { if (workspaceZoom > 0.4) { workspaceZoom -= 0.2; wrapper.style.transform = `scale(${workspaceZoom})`; document.getElementById('zoomVal').textContent = `${Math.round(workspaceZoom * 100)}%`; } });
+
+    window.addEventListener('resize', () => { canvas.calcOffset(); });
 });
