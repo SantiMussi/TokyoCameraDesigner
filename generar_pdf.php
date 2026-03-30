@@ -38,8 +38,8 @@ function saveBase64Image($base64String, $outputFile)
     return true;
 }
 
-$path_frente = $orden_dir . 'frente_impresion.png';
-$path_dorso = $orden_dir . 'dorso_impresion.png';
+$path_frente = $orden_dir . 'frente.png';
+$path_dorso = $orden_dir . 'dorso.png';
 $path_mockup = $orden_dir . 'mockup.png'; // Requerido especificamente "el mockup de la forma que te mandé"
 
 $savedAny = false;
