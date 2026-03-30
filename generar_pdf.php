@@ -15,37 +15,18 @@ $modelo = isset($data['modelo']) ? $data['modelo'] : 'V1';
 $storage = isset($data['storage']) ? $data['storage'] : '24';
 
 // ---------------------------------------------------------
-// COORDENADAS PARA LA INYECCIÓN EN EL PDF (UNIDADES EN MM)
-// Ajustar estos valores midiendo con Illustrator sobre el esqueleto
+// COORDENADAS PARA UNA SOLA CÁMARA (UNIDADES EN MM)
 // ---------------------------------------------------------
-$w_frente = 90; // Ancho del diseño frente
-$h_frente = 50; // Alto del diseño frente
-$w_dorso = 90;  // Ancho del diseño dorso
-$h_dorso = 50;  // Alto del diseño dorso
+$w_frente = 90; // Ancho
+$h_frente = 50; // Alto
+$w_dorso = 90;
+$h_dorso = 50;
 
-// CÁMARA 1 (Arriba Izquierda)
-$c1_xf = 10;
-$c1_yf = 10;
-$c1_xd = 110;
-$c1_yd = 10;
+$x_frente = 10; // Posición X frente
+$y_frente = 10; // Posición Y frente
 
-// CÁMARA 2 (Arriba Derecha)
-$c2_xf = 210;
-$c2_yf = 10;
-$c2_xd = 310;
-$c2_yd = 10;
-
-// CÁMARA 3 (Abajo Izquierda)
-$c3_xf = 10;
-$c3_yf = 150;
-$c3_xd = 110;
-$c3_yd = 150;
-
-// CÁMARA 4 (Abajo Derecha)
-$c4_xf = 210;
-$c4_yf = 150;
-$c4_xd = 310;
-$c4_yd = 150;
+$x_dorso = 110; // Posición X dorso
+$y_dorso = 10;  // Posición Y dorso
 
 // Directorios
 $uploads_dir = __DIR__ . '/uploads/';
@@ -85,7 +66,6 @@ try {
     $pdf->setPrintFooter(false);
     $pdf->SetAutoPageBreak(false);
 
-    // Selección automática de plantilla según modelo (V1 o V2)
     $plantilla = __DIR__ . '/plantilla_base_' . $modelo . '.pdf';
 
     if (file_exists($plantilla)) {
@@ -96,28 +76,20 @@ try {
         $pdf->useTemplate($tplId);
     } else {
         $pdf->AddPage('L', 'A4');
+        $size = ['height' => 210]; // Backup por si falla
     }
 
-    // Estampado de las 4 Cámaras
-    if (file_exists($path_frente) && file_exists($path_dorso)) {
-        // Cámara 1
-        $pdf->Image($path_frente, $c1_xf, $c1_yf, $w_frente, $h_frente, 'PNG');
-        $pdf->Image($path_dorso, $c1_xd, $c1_yd, $w_dorso, $h_dorso, 'PNG');
-
-        // Cámara 2
-        $pdf->Image($path_frente, $c2_xf, $c2_yf, $w_frente, $h_frente, 'PNG');
-        $pdf->Image($path_dorso, $c2_xd, $c2_yd, $w_dorso, $h_dorso, 'PNG');
-
-        // Cámara 3
-        $pdf->Image($path_frente, $c3_xf, $c3_yf, $w_frente, $h_frente, 'PNG');
-        $pdf->Image($path_dorso, $c3_xd, $c3_yd, $w_dorso, $h_dorso, 'PNG');
-
-        // Cámara 4
-        $pdf->Image($path_frente, $c4_xf, $c4_yf, $w_frente, $h_frente, 'PNG');
-        $pdf->Image($path_dorso, $c4_xd, $c4_yd, $w_dorso, $h_dorso, 'PNG');
+    // Dibujar el Frente
+    if (file_exists($path_frente)) {
+        $pdf->Image($path_frente, $x_frente, $y_frente, $w_frente, $h_frente, 'PNG');
     }
 
-    // Texto de info de la orden
+    // Dibujar el Dorso
+    if (file_exists($path_dorso)) {
+        $pdf->Image($path_dorso, $x_dorso, $y_dorso, $w_dorso, $h_dorso, 'PNG');
+    }
+
+    // Info de la orden al pie
     $pdf->SetFont('helvetica', 'B', 10);
     $pdf->SetXY(10, $size['height'] - 15);
     $pdf->Cell(0, 10, "Orden: $id_orden | Modelo: $modelo | Fotos: $storage", 0, 0, 'L');
