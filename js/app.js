@@ -245,6 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     canvas.remove(obj);
                 }
             });
+            canvas.backgroundColor = '#ffffff';
             canvas.discardActiveObject();
             canvas.requestRenderAll();
         }, 'Limpiar Canvas', '🧹');
