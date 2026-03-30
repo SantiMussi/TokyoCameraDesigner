@@ -42,11 +42,14 @@ if (!file_exists($pedidos_dir)) {
 }
 
 // Función auxiliar para guardar Base64 como PNG temporal
-function saveBase64Image($base64String, $outputFile) {
-    if (!$base64String) return false;
+function saveBase64Image($base64String, $outputFile)
+{
+    if (!$base64String)
+        return false;
     $parts = explode(',', $base64String);
     $data = isset($parts[1]) ? base64_decode($parts[1]) : base64_decode($parts[0]);
-    if (!$data) return false;
+    if (!$data)
+        return false;
     file_put_contents($outputFile, $data);
     return true;
 }
@@ -55,29 +58,19 @@ $id_orden = time() . '_' . rand(1000, 9999);
 $path_frente = $uploads_dir . 'frente_' . $id_orden . '.png';
 $path_dorso = $uploads_dir . 'dorso_' . $id_orden . '.png';
 
-if ($imagen_frente) saveBase64Image($imagen_frente, $path_frente);
-if ($imagen_dorso) saveBase64Image($imagen_dorso, $path_dorso);
+if ($imagen_frente)
+    saveBase64Image($imagen_frente, $path_frente);
+if ($imagen_dorso)
+    saveBase64Image($imagen_dorso, $path_dorso);
 
 // ---------------------------------------------------------
 // INTEGRACIÓN CON TCPDF Y FPDI
-// Importante: Deberás instalar TCPDF y FPDI vía composer o requerirlos.
-// Ejemplo: composer require setasign/fpdi tcpdf/tcpdf
 // ---------------------------------------------------------
-// require_once __DIR__ . '/vendor/autoload.php';
+// ACÁ ESTÁ EL CAMBIO: El autoload está activado
+require_once __DIR__ . '/vendor/autoload.php';
 
 try {
-    // Si no tienes las librerias instaladas esto lanzará un error evitable advirtiéndotelo.
-    if (!class_exists('setasign\Fpdi\Tcpdf\Fpdi')) {
-        // En producción lanzar Exception. Aquí simularemos éxito para no romper tu frontend si aún no instalaste FPDI.
-        $respuesta_mock = [
-            "success" => true,
-            "message" => "Simulación: Faltan instalar clases FPDI.",
-            "pdf_url" => "/pedidos_impresion/orden_mock_" . $id_orden . ".pdf"
-        ];
-        echo json_encode($respuesta_mock);
-        exit;
-    }
-
+    // ACÁ ESTÁ EL CAMBIO: Se borró el bloque de simulación
     $pdf = new \setasign\Fpdi\Tcpdf\Fpdi();
 
     $pdf->setPrintHeader(false);
@@ -86,12 +79,12 @@ try {
 
     // Plantilla Base PDF a inyectar
     $plantilla = __DIR__ . '/plantilla_base.pdf';
-    
+
     if (file_exists($plantilla)) {
         $pdf->setSourceFile($plantilla);
         $tplId = $pdf->importPage(1);
         $size = $pdf->getTemplateSize($tplId);
-        
+
         $pdf->AddPage($size['orientation'], array($size['width'], $size['height']));
         $pdf->useTemplate($tplId);
     } else {
@@ -118,9 +111,9 @@ try {
     // Guardar archivo final
     $pdf_filename = 'orden_' . $id_orden . '.pdf';
     $pdf_output = $pedidos_dir . $pdf_filename;
-    
+
     $pdf->Output($pdf_output, 'F');
-    
+
     // Devolvemos el JSON de éxito
     echo json_encode([
         "success" => true,
