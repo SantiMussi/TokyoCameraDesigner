@@ -2,6 +2,28 @@
 require_once 'admin_auth.php';
 check_login();
 
+// Lógica para eliminar pedido si se recibe un POST
+if (isset($_POST['delete_pedido'])) {
+    $stmt = $pdo->prepare("DELETE FROM pedidos WHERE id = ?");
+    $stmt->execute([$_POST['pedido_id']]);
+    
+    if (!empty($_POST['carpeta'])) {
+        $ruta_relativa = ltrim($_POST['carpeta'], '/');
+        $dir_path = __DIR__ . '/' . $ruta_relativa;
+        if (is_dir($dir_path)) {
+            $files = glob($dir_path . '/*');
+            foreach($files as $file){
+                if(is_file($file)) {
+                    unlink($file);
+                }
+            }
+            rmdir($dir_path);
+        }
+    }
+    header("Location: admin.php");
+    exit;
+}
+
 // Lógica para actualizar estados si se recibe un POST
 if (isset($_POST['update_status'])) {
     $stmt = $pdo->prepare("UPDATE pedidos SET estado_pago = ? WHERE id = ?");
@@ -233,6 +255,26 @@ foreach ($pedidos as $p) {
 
         .btn-update:hover {
             background: #1a202c;
+        }
+
+        .btn-delete {
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .btn-delete:hover {
+            background: #fecaca;
+            color: #dc2626;
         }
 
         /* Modal Styles */
@@ -497,19 +539,26 @@ foreach ($pedidos as $p) {
                             </button>
                         </td>
                         <td>
-                            <form method="POST" class="form-status">
-                                <input type="hidden" name="pedido_id" value="<?php echo htmlspecialchars($p['id']); ?>">
-                                <select name="nuevo_estado" class="form-select">
-                                    <option value="pendiente" <?php echo $p['estado_pago'] == 'pendiente' ? 'selected' : ''; ?>>
-                                        Pendiente</option>
-                                    <option value="impreso" <?php echo $p['estado_pago'] == 'impreso' ? 'selected' : ''; ?>>
-                                        Impreso</option>
-                                    <option value="empaquetado" <?php echo $p['estado_pago'] == 'empaquetado' ? 'selected' : ''; ?>>Empaquetado</option>
-                                    <option value="entregado" <?php echo $p['estado_pago'] == 'entregado' ? 'selected' : ''; ?>>
-                                        Entregado</option>
-                                </select>
-                                <button type="submit" name="update_status" class="btn-update">Guardar</button>
-                            </form>
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <form method="POST" class="form-status" style="margin:0;">
+                                    <input type="hidden" name="pedido_id" value="<?php echo htmlspecialchars($p['id']); ?>">
+                                    <select name="nuevo_estado" class="form-select">
+                                        <option value="pendiente" <?php echo $p['estado_pago'] == 'pendiente' ? 'selected' : ''; ?>>
+                                            Pendiente</option>
+                                        <option value="impreso" <?php echo $p['estado_pago'] == 'impreso' ? 'selected' : ''; ?>>
+                                            Impreso</option>
+                                        <option value="empaquetado" <?php echo $p['estado_pago'] == 'empaquetado' ? 'selected' : ''; ?>>Empaquetado</option>
+                                        <option value="entregado" <?php echo $p['estado_pago'] == 'entregado' ? 'selected' : ''; ?>>
+                                            Entregado</option>
+                                    </select>
+                                    <button type="submit" name="update_status" class="btn-update">Guardar</button>
+                                </form>
+                                <form method="POST" style="margin:0;" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este pedido y todos sus archivos? Esta acción no se puede deshacer.');">
+                                    <input type="hidden" name="pedido_id" value="<?php echo htmlspecialchars($p['id']); ?>">
+                                    <input type="hidden" name="carpeta" value="<?php echo htmlspecialchars($p['url_carpeta']); ?>">
+                                    <button type="submit" name="delete_pedido" class="btn-delete" title="Eliminar pedido">🗑️</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>
