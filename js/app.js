@@ -13,6 +13,11 @@ document.addEventListener('DOMContentLoaded', () => {
         preserveObjectStacking: true
     });
 
+    // Bloquear estiramiento no proporcional por defecto
+    fabric.Object.prototype.set({
+        lockUniScaling: true
+    });
+
     // 2. Estado de la Aplicación
     const state = {
         model: 'V1',
@@ -129,22 +134,93 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!file) return;
         const reader = new FileReader();
         reader.onload = function (f) {
-            fabric.Image.fromURL(f.target.result, (img) => {
-                const scale = 300 / Math.max(img.width, img.height);
-                img.set({
-                    left: CANVAS_WIDTH / 2, top: CANVAS_HEIGHT / 2,
-                    originX: 'center', originY: 'center',
-                    scaleX: scale, scaleY: scale,
-                    cornerColor: '#ff2a85', transparentCorners: false,
-                    clipPath: currentClipPath
+            const tempImg = new Image();
+            tempImg.onload = function() {
+                if (tempImg.width < 1500 || tempImg.height < 1500) {
+                    showToast("⚠️ Esta imagen tiene baja resolución. Podría salir pixelada al imprimir.");
+                }
+                fabric.Image.fromURL(f.target.result, (img) => {
+                    const scale = 300 / Math.max(img.width, img.height);
+                    img.set({
+                        left: CANVAS_WIDTH / 2, top: CANVAS_HEIGHT / 2,
+                        originX: 'center', originY: 'center',
+                        scaleX: scale, scaleY: scale,
+                        cornerColor: '#ff2a85', transparentCorners: false,
+                        clipPath: currentClipPath
+                    });
+                    canvas.add(img);
+                    canvas.setActiveObject(img);
+                    canvas.requestRenderAll();
                 });
-                canvas.add(img);
-                canvas.setActiveObject(img);
-                canvas.requestRenderAll();
-            });
+            };
+            tempImg.src = f.target.result;
         };
         reader.readAsDataURL(file);
         e.target.value = '';
+    });
+
+    // -- TOAST FUNCTIONALITY --
+    function showToast(message) {
+        const container = document.getElementById('toastContainer');
+        if(!container) return;
+        const toast = document.createElement('div');
+        toast.style.background = '#333';
+        toast.style.color = 'white';
+        toast.style.padding = '12px 20px';
+        toast.style.borderRadius = '8px';
+        toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        toast.style.fontSize = '14px';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(20px)';
+        toast.style.transition = 'opacity 0.3s, transform 0.3s';
+        toast.innerText = message;
+        
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+        }, 10);
+        
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(20px)';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+
+    // -- CONTROLES DE CAPAS Y ELIMINACIÓN --
+    const objControls = document.getElementById('objectControls');
+    canvas.on('selection:created', () => { if(objControls) objControls.style.display = 'block'; });
+    canvas.on('selection:updated', () => { if(objControls) objControls.style.display = 'block'; });
+    canvas.on('selection:cleared', () => { if(objControls) objControls.style.display = 'none'; });
+
+    document.getElementById('bringForwardBtn')?.addEventListener('click', () => {
+        const activeObj = canvas.getActiveObject();
+        if (activeObj) { canvas.bringForward(activeObj); canvas.requestRenderAll(); }
+    });
+
+    document.getElementById('sendBackwardBtn')?.addEventListener('click', () => {
+        const activeObj = canvas.getActiveObject();
+        if (activeObj) { canvas.sendBackwards(activeObj); canvas.requestRenderAll(); }
+    });
+
+    document.getElementById('deleteObjBtn')?.addEventListener('click', () => {
+        const activeObj = canvas.getActiveObject();
+        if (activeObj) { canvas.remove(activeObj); canvas.discardActiveObject(); canvas.requestRenderAll(); }
+    });
+
+    document.getElementById('clearDesignBtn')?.addEventListener('click', () => {
+        if(confirm('¿Estás seguro de que deseas limpiar el diseño actual?')) {
+            const objects = canvas.getObjects();
+            objects.forEach(obj => {
+                if (obj !== canvas.overlayImage && obj.type !== 'rect') { 
+                    canvas.remove(obj);
+                }
+            });
+            canvas.discardActiveObject();
+            canvas.requestRenderAll();
+        }
     });
 
     // 7. Borrar objetos con teclado
@@ -179,6 +255,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         confirmOrderBtn.innerHTML = 'Guardando pedido...';
         confirmOrderBtn.disabled = true;
+        
+        const loader = document.getElementById('loadingOverlay');
+        if(loader) loader.style.display = 'flex';
 
         // Exportar cara limpia para impresión
         const exportCleanCanvasBase64 = () => {
@@ -291,10 +370,17 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const res = await resp.json();
             if (res.success) {
+                if(loader) loader.style.display = 'none';
                 alert(`¡Pedido guardado exitosamente! Tu orden es: ${res.id_orden}`);
                 checkoutModal.style.display = 'none';
-            } else { alert("Error: " + res.error); }
-        } catch (e) { alert("Error de conexión con el servidor"); }
+            } else { 
+                if(loader) loader.style.display = 'none';
+                alert("Error: " + res.error); 
+            }
+        } catch (e) { 
+            if(loader) loader.style.display = 'none';
+            alert("Error de conexión con el servidor"); 
+        }
 
         confirmOrderBtn.innerHTML = 'GUARDAR Y FINALIZAR';
         confirmOrderBtn.disabled = false;

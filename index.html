@@ -60,6 +60,26 @@
                 </label>
                 <input type="file" id="imageUpload" accept="image/*" style="display: none;">
                 <p class="hint">Puedes arrastrar, rotar y escalar tu imagen libremente sobre la cámara.</p>
+
+                <!-- UI Controls -->
+                <div id="objectControls" style="display:none; margin-top:15px; background:rgba(255,123,180,0.05); padding:12px; border-radius:10px; border:1px dashed #ff7bb4;">
+                    <h4 style="font-size: 13px; margin-top: 0; margin-bottom: 8px; color: #ff7bb4; display:flex; align-items:center; gap:5px;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                        Capa Seleccionada
+                    </h4>
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                        <button id="bringForwardBtn" style="flex:1; padding:6px; font-size:12px; border-radius:6px; border:1px solid #ff7bb4; background:white; color:#ff7bb4; cursor:pointer; transition:0.2s;" title="Traer al frente">Subir Capa</button>
+                        <button id="sendBackwardBtn" style="flex:1; padding:6px; font-size:12px; border-radius:6px; border:1px solid #ff7bb4; background:white; color:#ff7bb4; cursor:pointer; transition:0.2s;" title="Enviar al fondo">Bajar Capa</button>
+                    </div>
+                    <button id="deleteObjBtn" style="width:100%; padding:8px; font-size:12px; border-radius:6px; background:#ef4444; color:white; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; transition:0.2s;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        Eliminar seleccionada
+                    </button>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <button id="clearDesignBtn" style="width:100%; padding:8px; font-size:12px; border-radius:6px; background:#f3f4f6; color:#4b5563; border:1px solid #d1d5db; cursor:pointer; transition:0.2s;">Limpiar diseño</button>
+                </div>
             </div>
 
             <div class="control-group action-group">
@@ -121,6 +141,17 @@
                 Volver al diseñador
             </button>
         </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" style="position:fixed; bottom:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:10px;"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,123,180,0.95); z-index:10000; justify-content:center; align-items:center; flex-direction:column; color:white; font-family:'Outfit', sans-serif;">
+        <div style="width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.3); border-top: 5px solid white; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <h2 style="margin-top:20px; font-weight: 700;">Procesando diseño en alta resolución...</h2>
+        <p style="opacity: 0.9;">Por favor, no cierres esta ventana.</p>
+        <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
     </div>
 
     <!-- Fabric JS -->
