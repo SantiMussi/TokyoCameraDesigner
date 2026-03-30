@@ -1,120 +1,92 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Initialize Fabric.js Canvas
+    // 1. Inicialización de Fabric.js Canvas
     const canvasEl = document.getElementById('cameraCanvas');
     const wrapper = document.querySelector('.canvas-wrapper');
 
-    // We'll set a default size, but it will scale via CSS
     const CANVAS_WIDTH = 800;
     const CANVAS_HEIGHT = 600;
 
     const canvas = new fabric.Canvas('cameraCanvas', {
         width: CANVAS_WIDTH,
         height: CANVAS_HEIGHT,
-        backgroundColor: "#ffffff", // Transparent to allow CSS glassmorphism to show through
-        preserveObjectStacking: true // Keep objects in order when selecting
+        backgroundColor: "#ffffff",
+        preserveObjectStacking: true
     });
 
-    // 2. Application State
+    // 2. Estado de la Aplicación
     const state = {
-        model: 'V1',    // 'V1' or 'V2'
-        face: 'FRENTE', // 'FRENTE' or 'DORSO'
-        storage: '18',  // '18', '24' or '32'
+        model: 'V1',
+        face: 'FRENTE',
+        storage: '18',
     };
 
-    // Keep track of the file paths for the masks/templates
     const templates = {
         'V1-FRENTE': 'Fotos/DESCARTABLEV1FRENTE.png',
         'V1-DORSO': 'Fotos/DESCARTABLEV1DORSO.png',
         'V2-FRENTE': 'Fotos/DESCARTABLEV2FRENTE.png',
         'V2-DORSO': 'Fotos/DESCARTABLEV2DORSO.png'
     };
-    // Cache to store the user's designs for each face
-    const savedDesigns = {};
-    let currentClipPath = null; // Store the active clipping boundaries
 
-    // 3. Load Template Image
+    const savedDesigns = {};
+    let currentClipPath = null;
+
+    // 3. Carga de Plantilla (Overlay)
     function loadTemplate(callback) {
         const key = `${state.model}-${state.face}`;
         const imgUrl = templates[key];
 
-        // Ensure we don't break if URL is wrong
         if (!imgUrl) {
             if (callback) callback();
             return;
         }
 
-        // Load the overlay mask
-        // When using overlay image, user designs sit underneath the camera cutout.
         fabric.Image.fromURL(imgUrl, (img) => {
             if (!img) {
                 if (callback) callback();
                 return;
             }
 
-            // Calculate scale to fit canvas width/height
-            const scaleX = CANVAS_WIDTH / img.width;
-            const scaleY = CANVAS_HEIGHT / img.height;
-            const scale = Math.min(scaleX, scaleY) * 0.9; // 90% of canvas max
+            const scale = Math.min(CANVAS_WIDTH / img.width, CANVAS_HEIGHT / img.height) * 0.9;
 
             img.set({
-                originX: 'center',
-                originY: 'center',
-                left: CANVAS_WIDTH / 2,
-                top: CANVAS_HEIGHT / 2,
-                scaleX: scale,
-                scaleY: scale,
-                evented: false,   // Overlay shouldn't catch mouse events
-                selectable: false // Can't be selected
+                originX: 'center', originY: 'center',
+                left: CANVAS_WIDTH / 2, top: CANVAS_HEIGHT / 2,
+                scaleX: scale, scaleY: scale,
+                evented: false, selectable: false
             });
 
-            // Set as overlay so it covers the elements added by user
             canvas.setOverlayImage(img, canvas.renderAll.bind(canvas));
 
-            // Apply a clip path to the canvas to prevent uploaded images
-            // from bleeding outside the boundaries of the camera mask bounds.
             currentClipPath = new fabric.Rect({
-                left: CANVAS_WIDTH / 2,
-                top: CANVAS_HEIGHT / 2,
-                originX: 'center',
-                originY: 'center',
-                width: img.width * scale,
-                height: img.height * scale,
+                left: CANVAS_WIDTH / 2, top: CANVAS_HEIGHT / 2,
+                originX: 'center', originY: 'center',
+                width: img.width * scale, height: img.height * scale,
                 absolutePositioned: true
             });
-            // We NO LONGER clip the canvas. We clip the individual objects to let controls overflow
-            // canvas.clipPath = clipPath;
 
-            canvas.getObjects().forEach(obj => {
-                obj.clipPath = currentClipPath;
-            });
+            canvas.getObjects().forEach(obj => { obj.clipPath = currentClipPath; });
             canvas.requestRenderAll();
-
             if (callback) callback();
         });
     }
 
-    // Function to handle switching views safely, saving current objects
+    // 4. Cambio de Vista (Frente/Dorso o V1/V2)
     function switchView(newModel, newFace) {
         const currentKey = `${state.model}-${state.face}`;
-        // Save user-uploaded objects into the cache
         savedDesigns[currentKey] = canvas.getObjects().map(obj => obj.toObject());
 
-        // Update application state
         state.model = newModel;
         state.face = newFace;
         const newKey = `${state.model}-${state.face}`;
 
-        // Clear the canvas to be ready for the new view
         canvas.clear();
         canvas.backgroundColor = '#ffffff';
 
-        // Load new overlay template, then conditionally restore cached objects
         loadTemplate(() => {
             if (savedDesigns[newKey] && savedDesigns[newKey].length > 0) {
-                // enlivenObjects converts raw JSON object data back into Fabric.js object instances
                 fabric.util.enlivenObjects(savedDesigns[newKey], (objects) => {
                     objects.forEach(obj => {
-                        obj.clipPath = currentClipPath; // Re-apply the clipping to restored objects
+                        obj.clipPath = currentClipPath;
                         canvas.add(obj);
                     });
                     canvas.renderAll();
@@ -123,359 +95,203 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Initial load
     loadTemplate();
 
-    // 4. Handle UI Controls (Model Switch)
-    const modelBtns = document.querySelectorAll('.model-btn');
-    modelBtns.forEach(btn => {
+    // 5. Controles de UI (Botones laterales)
+    document.querySelectorAll('.model-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const selectedModel = e.target.dataset.model;
-            if (selectedModel === state.model) return; // Do nothing if it's the same
-
-            // Update UI
-            modelBtns.forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
-
-            // Switch View
-            switchView(selectedModel, state.face);
+            switchView(e.target.dataset.model, state.face);
         });
     });
 
-    // 5. Handle UI Controls (Face Switch)
-    const faceBtns = document.querySelectorAll('.face-btn');
-    faceBtns.forEach(btn => {
+    document.querySelectorAll('.face-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const selectedFace = e.target.dataset.face;
-            if (selectedFace === state.face) return; // Do nothing if it's the same
-
-            // Update UI
-            faceBtns.forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.face-btn').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
-
-            // Switch View
-            switchView(state.model, selectedFace);
+            switchView(state.model, e.target.dataset.face);
         });
     });
 
-    // 5b. Handle UI Controls (Storage Switch)
-    const storageBtns = document.querySelectorAll('.storage-btn');
-    storageBtns.forEach(btn => {
+    document.querySelectorAll('.storage-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const selectedStorage = e.target.dataset.storage;
-            if (selectedStorage === state.storage) return;
-
-            // Update UI
-            storageBtns.forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.storage-btn').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
-
-            // Update State (no need to change the canvas for this)
-            state.storage = selectedStorage;
+            state.storage = e.target.dataset.storage;
         });
     });
 
-    // 6. Handle Image Upload
+    // 6. Subida de Imágenes
     const imageUpload = document.getElementById('imageUpload');
     imageUpload.addEventListener('change', function (e) {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = function (f) {
-            const data = f.target.result;
-
-            fabric.Image.fromURL(data, (img) => {
-                // Initial scale so it doesn't overflow massively
-                const maxDim = 300;
-                let scale = 1;
-                if (img.width > maxDim || img.height > maxDim) {
-                    scale = maxDim / Math.max(img.width, img.height);
-                }
-
+            fabric.Image.fromURL(f.target.result, (img) => {
+                const scale = 300 / Math.max(img.width, img.height);
                 img.set({
-                    left: CANVAS_WIDTH / 2,
-                    top: CANVAS_HEIGHT / 2,
-                    originX: 'center',
-                    originY: 'center',
-                    scaleX: scale,
-                    scaleY: scale,
-                    cornerColor: '#ff2a85',
-                    cornerStrokeColor: '#fff',
-                    borderColor: '#ff2a85',
-                    transparentCorners: false
+                    left: CANVAS_WIDTH / 2, top: CANVAS_HEIGHT / 2,
+                    originX: 'center', originY: 'center',
+                    scaleX: scale, scaleY: scale,
+                    cornerColor: '#ff2a85', transparentCorners: false,
+                    clipPath: currentClipPath
                 });
-
-                if (currentClipPath) {
-                    img.clipPath = currentClipPath;
-                }
-
                 canvas.add(img);
                 canvas.setActiveObject(img);
                 canvas.requestRenderAll();
             });
         };
         reader.readAsDataURL(file);
-
-        // Reset input so the same file can be uploaded again if needed
         e.target.value = '';
     });
 
-    // 7. Delete Object Support (Keyboard)
+    // 7. Soporte para Borrar (Tecla Delete/Backspace)
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Delete' || e.key === 'Backspace') {
             const activeObj = canvas.getActiveObject();
-            if (activeObj) {
-                // Prevent going back in browser if backspace
-                if (e.key === 'Backspace' && e.target.tagName !== 'INPUT') {
-                    e.preventDefault();
-                }
+            if (activeObj && e.target.tagName !== 'INPUT') {
                 canvas.remove(activeObj);
             }
         }
     });
 
-    // 8. Output Design y Envío a PHP
+    // 8. FLUJO DE FINALIZACIÓN (Sidebar -> Modal)
     const finishBtn = document.getElementById('finishDesignBtn');
-    finishBtn.addEventListener('click', async () => {
-        // 1. Estado de Carga
-        const originalText = finishBtn.innerHTML;
-        finishBtn.innerHTML = 'Cargando...';
-        finishBtn.disabled = true;
+    const checkoutModal = document.getElementById('checkoutModal');
+    const confirmOrderBtn = document.getElementById('confirmOrderBtn');
 
-        // 2. Función para exportar un canvas limpiando el fondo temporalmente
+    finishBtn.addEventListener('click', () => {
+        checkoutModal.style.display = 'flex';
+    });
+
+    // 9. LÓGICA DE GUARDADO (Confirmación en el Modal)
+    confirmOrderBtn.addEventListener('click', async () => {
+        const nameVal = document.getElementById('clientName').value;
+        const emailVal = document.getElementById('clientEmail').value;
+        const telVal = document.getElementById('clientWhatsapp').value;
+
+        if (!nameVal || !emailVal || !telVal) {
+            alert("Por favor, completá todos tus datos.");
+            return;
+        }
+
+        confirmOrderBtn.innerHTML = 'Guardando pedido...';
+        confirmOrderBtn.disabled = true;
+
+        // Funciones de exportación interna
         const exportCleanCanvasBase64 = () => {
             const tempBg = canvas.backgroundColor;
             const tempOverlay = canvas.overlayImage;
-
             canvas.backgroundColor = null;
             canvas.overlayImage = null;
             canvas.renderAll();
-
-            const dataUrl = canvas.toDataURL({
-                format: 'png',
-                quality: 1,
-                multiplier: 4 // Alta resolución
-            });
-
+            const dataUrl = canvas.toDataURL({ format: 'png', multiplier: 4 });
             canvas.backgroundColor = tempBg;
             canvas.overlayImage = tempOverlay;
             canvas.renderAll();
-
             return dataUrl;
         };
 
         const exportMockupCanvasBase64 = () => {
             const tempBg = canvas.backgroundColor;
-            canvas.backgroundColor = null; // Para que el borde de la cámara sea transparente
+            canvas.backgroundColor = null;
             canvas.renderAll();
-
-            const dataUrl = canvas.toDataURL({
-                format: 'png',
-                quality: 1,
-                multiplier: 2 // Resolución moderada para mockup
-            });
-
+            const dataUrl = canvas.toDataURL({ format: 'png', multiplier: 2 });
             canvas.backgroundColor = tempBg;
             canvas.renderAll();
-
             return dataUrl;
         };
 
         const generateCombinedMockup = async (frenteB64, dorsoB64) => {
             const c = document.createElement('canvas');
-            c.width = 1000;
-            c.height = 1600;
+            c.width = 1000; c.height = 1500;
             const ctx = c.getContext('2d');
-
-            // Fondo totalmente blanco
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, c.width, c.height);
-
-            const loadImg = (src) => new Promise(res => {
-                if (!src) return res(null);
-                const img = new Image(); img.onload = () => res(img); img.src = src;
+            // Fondo Rosa y Estrellas
+            ctx.fillStyle = '#ff7bb4'; ctx.fillRect(0, 0, c.width, c.height);
+            ctx.fillStyle = '#faff60';
+            const stars = [[100, 100, 20], [900, 150, 25], [150, 500, 15], [850, 800, 20], [100, 1200, 30]];
+            stars.forEach(s => {
+                ctx.beginPath();
+                for (let i = 0; i < 5; i++) {
+                    ctx.lineTo(s[0] + Math.cos((18 + i * 72) / 180 * Math.PI) * s[2], s[1] - Math.sin((18 + i * 72) / 180 * Math.PI) * s[2]);
+                    ctx.lineTo(s[0] + Math.cos((54 + i * 72) / 180 * Math.PI) * (s[2] / 2.5), s[1] - Math.sin((54 + i * 72) / 180 * Math.PI) * (s[2] / 2.5));
+                }
+                ctx.closePath(); ctx.fill();
             });
-            const fImg = await loadImg(frenteB64);
-            const dImg = await loadImg(dorsoB64);
-
-            const targetW = 850;
-            let targetH = 0;
-
-            // Dibujar Frente en top
-            if (fImg) {
-                let scale = targetW / fImg.width;
-                targetH = fImg.height * scale;
-                ctx.drawImage(fImg, (c.width - targetW) / 2, 200, targetW, targetH);
-            }
-
-            // Dibujar Dorso abajo
-            if (dImg) {
-                let scale = targetW / dImg.width;
-                let targetHDorso = dImg.height * scale;
-                ctx.drawImage(dImg, (c.width - targetW) / 2, 200 + (targetH || 600) + 150, targetW, targetHDorso);
-            }
-
-            return c.toDataURL('image/png', 0.9);
+            const loadImg = (src) => new Promise(res => { const img = new Image(); img.onload = () => res(img); img.src = src; });
+            const fImg = await loadImg(frenteB64); const dImg = await loadImg(dorsoB64);
+            ctx.drawImage(fImg, 100, 250, 800, fImg.height * (800 / fImg.width));
+            ctx.drawImage(dImg, 100, 850, 800, dImg.height * (800 / dImg.width));
+            return c.toDataURL('image/png');
         };
 
-        // 3. Exportar cara activa (ambos formatos)
         const activeFace = state.face;
         const otherFace = activeFace === 'FRENTE' ? 'DORSO' : 'FRENTE';
-
-        const activeFaceCleanBase64 = exportCleanCanvasBase64();
-        const activeFaceMockupBase64 = exportMockupCanvasBase64();
-
-        // 4. Movernos "silenciosamente" a la otra cara para exportarla
         const activeKey = `${state.model}-${activeFace}`;
         const otherKey = `${state.model}-${otherFace}`;
+
         savedDesigns[activeKey] = canvas.getObjects().map(obj => obj.toObject());
+        const activeClean = exportCleanCanvasBase64();
+        const activeMock = exportMockupCanvasBase64();
 
+        // Proceso silencioso para la otra cara
         canvas.clear();
-        let otherFaceCleanBase64 = null;
-        let otherFaceMockupBase64 = null;
+        state.face = otherFace;
+        let otherClean, otherMock;
 
-        await new Promise((resolve) => {
-            // Forzar estado temporal para cargar plantilla correctamente
-            state.face = otherFace;
+        await new Promise(resolve => {
             loadTemplate(() => {
-                if (savedDesigns[otherKey] && savedDesigns[otherKey].length > 0) {
-                    fabric.util.enlivenObjects(savedDesigns[otherKey], (objects) => {
-                        objects.forEach(obj => {
-                            obj.clipPath = currentClipPath;
-                            canvas.add(obj);
-                        });
+                if (savedDesigns[otherKey]) {
+                    fabric.util.enlivenObjects(savedDesigns[otherKey], (objs) => {
+                        objs.forEach(o => canvas.add(o));
                         canvas.renderAll();
-                        // Exportar ambos
-                        otherFaceCleanBase64 = exportCleanCanvasBase64();
-                        otherFaceMockupBase64 = exportMockupCanvasBase64();
+                        otherClean = exportCleanCanvasBase64();
+                        otherMock = exportMockupCanvasBase64();
                         resolve();
                     });
-                } else {
-                    canvas.renderAll();
-                    otherFaceCleanBase64 = exportCleanCanvasBase64();
-                    otherFaceMockupBase64 = exportMockupCanvasBase64();
-                    resolve();
-                }
+                } else { resolve(); }
             });
         });
 
-        // Restaurar estado de cara original
-        state.face = activeFace;
+        const finalMockup = await generateCombinedMockup(
+            activeFace === 'FRENTE' ? activeMock : otherMock,
+            activeFace === 'DORSO' ? activeMock : otherMock
+        );
 
-        // 5. Restaurar la vista original que estaba viendo el usuario
-        canvas.clear();
-        canvas.backgroundColor = '#ffffff';
-        loadTemplate(() => {
-            if (savedDesigns[activeKey] && savedDesigns[activeKey].length > 0) {
-                fabric.util.enlivenObjects(savedDesigns[activeKey], (objects) => {
-                    objects.forEach(obj => {
-                        obj.clipPath = currentClipPath; // Reasignar clip
-                        canvas.add(obj);
-                    });
-                    canvas.renderAll();
-                });
-            }
-        });
-
-        // 5.5 Generar el Mockup Combinado
-        const frenteMockup = activeFace === 'FRENTE' ? activeFaceMockupBase64 : otherFaceMockupBase64;
-        const dorsoMockup = activeFace === 'DORSO' ? activeFaceMockupBase64 : otherFaceMockupBase64;
-        const finalMockupBase64 = await generateCombinedMockup(frenteMockup, dorsoMockup);
-
-        // 5.6 Extraer las imágenes originales subidas por el usuario (una por una)
         const usedImages = [];
-        ['FRENTE', 'DORSO'].forEach(face => {
-            const key = `${state.model}-${face}`;
-            const objects = savedDesigns[key] || [];
-            objects.forEach(obj => {
-                // Agregar solo las imágenes que el usuario subió
-                if (obj.type === 'image' && obj.src) {
-                    usedImages.push(obj.src);
-                }
-            });
+        [activeKey, otherKey].forEach(k => {
+            (savedDesigns[k] || []).forEach(o => { if (o.type === 'image') usedImages.push(o.src); });
         });
 
-        // Capturar datos del Modal (si existen)
-        const clientName = document.getElementById('clientName') ? document.getElementById('clientName').value : '';
-        const clientEmail = document.getElementById('clientEmail') ? document.getElementById('clientEmail').value : '';
-        const clientWhatsapp = document.getElementById('clientWhatsapp') ? document.getElementById('clientWhatsapp').value : '';
-
-        // 6. Preparar JSON y enviar al backend PHP
         const payload = {
-            modelo: state.model,
-            storage: state.storage,
-            nombre_cliente: clientName,
-            email: clientEmail,
-            whatsapp: clientWhatsapp,
-            // Guardamos las limpiezas por las dudas
-            imagen_frente: activeFace === 'FRENTE' ? activeFaceCleanBase64 : otherFaceCleanBase64,
-            imagen_dorso: activeFace === 'DORSO' ? activeFaceCleanBase64 : otherFaceCleanBase64,
-            mockup: finalMockupBase64,
-            imagenes_utilizadas: usedImages
+            modelo: state.model, storage: state.storage,
+            nombre_cliente: nameVal, email: emailVal, whatsapp: telVal,
+            imagen_frente: activeFace === 'FRENTE' ? activeClean : otherClean,
+            imagen_dorso: activeFace === 'DORSO' ? activeClean : otherClean,
+            mockup: finalMockup, imagenes_utilizadas: usedImages
         };
 
         try {
-            const response = await fetch('generar_pdf.php', {
+            const resp = await fetch('generar_pdf.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
+            const res = await resp.json();
+            if (res.success) {
+                alert(`¡Pedido guardado! Orden: ${res.id_orden}`);
+                checkoutModal.style.display = 'none';
+            } else { alert("Error: " + res.error); }
+        } catch (e) { alert("Error de conexión"); }
 
-            const result = await response.json();
-
-            if (result.success) {
-                alert(`¡Diseño guardado exitosamente! Tu orden es: ${result.id_orden}`);
-                console.log('Carpeta del pedido:', result.folder_url);
-            } else {
-                alert('Hubo un error en el servidor: ' + result.error);
-                console.error(result.error);
-            }
-        } catch (error) {
-            console.error("Error en el Fetch:", error);
-            alert("Error conectando con generar_pdf.php");
-        } finally {
-            finishBtn.innerHTML = originalText;
-            finishBtn.disabled = false;
-        }
+        confirmOrderBtn.innerHTML = originalText;
+        confirmOrderBtn.disabled = false;
     });
 
-    // 9. Workspace Zoom Controls
+    // 10. Zoom Controls
     let workspaceZoom = 1;
-    const zoomInBtn = document.getElementById('zoomInBtn');
-    const zoomOutBtn = document.getElementById('zoomOutBtn');
-    const zoomVal = document.getElementById('zoomVal');
-
-    function updateWorkspaceZoom() {
-        wrapper.style.transform = `scale(${workspaceZoom})`;
-        zoomVal.textContent = `${Math.round(workspaceZoom * 100)}%`;
-    }
-
-    zoomInBtn.addEventListener('click', () => {
-        if (workspaceZoom < 3) { // Max 300%
-            workspaceZoom += 0.2;
-            updateWorkspaceZoom();
-        }
-    });
-
-    zoomOutBtn.addEventListener('click', () => {
-        if (workspaceZoom > 0.4) { // Min 40%
-            workspaceZoom -= 0.2;
-            updateWorkspaceZoom();
-        }
-    });
-
-    zoomVal.addEventListener('click', () => {
-        // Reset zoom on clicking percentage
-        workspaceZoom = 1;
-        updateWorkspaceZoom();
-    });
-    // Change cursor style to pointer to indicate it's clickable
-    zoomVal.style.cursor = 'pointer';
-
-    // 10. Responsive Canvas Support
-    window.addEventListener('resize', () => {
-        // Recalculate pointer coordinates whenever the CSS window size changes
-        canvas.calcOffset();
-    });
-
+    document.getElementById('zoomInBtn').addEventListener('click', () => { if (workspaceZoom < 3) { workspaceZoom += 0.2; wrapper.style.transform = `scale(${workspaceZoom})`; document.getElementById('zoomVal').textContent = `${Math.round(workspaceZoom * 100)}%`; } });
+    document.getElementById('zoomOutBtn').addEventListener('click', () => { if (workspaceZoom > 0.4) { workspaceZoom -= 0.2; wrapper.style.transform = `scale(${workspaceZoom})`; document.getElementById('zoomVal').textContent = `${Math.round(workspaceZoom * 100)}%`; } });
 });
