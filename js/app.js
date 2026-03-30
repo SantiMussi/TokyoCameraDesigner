@@ -189,6 +189,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 4000);
     }
 
+    // -- ALERT & CONFIRM MODALS --
+    function customAlert(msg, title = 'Atención', icon = '⚠️') {
+        const modal = document.getElementById('customAlert');
+        if(!modal) { alert(msg); return; }
+        document.getElementById('customAlertTitle').innerText = title;
+        document.getElementById('customAlertMsg').innerText = msg;
+        document.getElementById('customAlertIcon').innerText = icon;
+        modal.style.display = 'flex';
+    }
+
+    function customConfirm(msg, onConfirm, title = 'Confirmar', icon = '❓') {
+        const modal = document.getElementById('customConfirm');
+        if(!modal) { if(confirm(msg)) onConfirm(); return; }
+        document.getElementById('customConfirmTitle').innerText = title;
+        document.getElementById('customConfirmMsg').innerText = msg;
+        document.getElementById('customConfirmIcon').innerText = icon;
+        modal.style.display = 'flex';
+        
+        document.getElementById('customConfirmOk').onclick = function() {
+            modal.style.display = 'none';
+            onConfirm();
+        };
+        document.getElementById('customConfirmCancel').onclick = function() {
+            modal.style.display = 'none';
+        };
+    }
+
     // -- CONTROLES DE CAPAS Y ELIMINACIÓN --
     const objControls = document.getElementById('objectControls');
     canvas.on('selection:created', () => { if(objControls) objControls.style.display = 'block'; });
@@ -211,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('clearDesignBtn')?.addEventListener('click', () => {
-        if(confirm('¿Estás seguro de que deseas limpiar el diseño actual?')) {
+        customConfirm('¿Estás seguro de que deseas limpiar el diseño actual?', () => {
             const objects = canvas.getObjects();
             objects.forEach(obj => {
                 if (obj !== canvas.overlayImage && obj.type !== 'rect') { 
@@ -220,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             canvas.discardActiveObject();
             canvas.requestRenderAll();
-        }
+        }, 'Limpiar Canvas', '🧹');
     });
 
     // 7. Borrar objetos con teclado
@@ -249,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const telVal = document.getElementById('clientWhatsapp').value;
 
         if (!nameVal || !emailVal || !telVal) {
-            alert("Por favor, completá todos tus datos.");
+            customAlert("Por favor, completá todos tus datos.", "Faltan datos", "📝");
             return;
         }
 
@@ -371,15 +398,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await resp.json();
             if (res.success) {
                 if(loader) loader.style.display = 'none';
-                alert(`¡Pedido guardado exitosamente! Tu orden es: ${res.id_orden}`);
+                customAlert(`¡Pedido guardado exitosamente! Tu orden es: ${res.id_orden}`, "¡Éxito!", "🎉");
                 checkoutModal.style.display = 'none';
             } else { 
                 if(loader) loader.style.display = 'none';
-                alert("Error: " + res.error); 
+                customAlert("Error: " + res.error, "Error al guardar", "❌"); 
             }
         } catch (e) { 
             if(loader) loader.style.display = 'none';
-            alert("Error de conexión con el servidor"); 
+            customAlert("Error de conexión con el servidor", "Error de red", "🔌"); 
         }
 
         confirmOrderBtn.innerHTML = 'GUARDAR Y FINALIZAR';
