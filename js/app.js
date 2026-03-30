@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 5. Restaurar la vista original que estaba viendo el usuario
         canvas.clear();
-        canvas.backgroundColor = null;
+        canvas.backgroundColor = '#ffffff';
         loadTemplate(() => {
             if (savedDesigns[activeKey] && savedDesigns[activeKey].length > 0) {
                 fabric.util.enlivenObjects(savedDesigns[activeKey], (objects) => {
