@@ -15,13 +15,13 @@ $pedidos = $pdo->query("SELECT * FROM pedidos ORDER BY fecha DESC")->fetchAll();
 $pedidos_js = [];
 foreach ($pedidos as $p) {
     // Evitar barra doble si url_carpeta ya empieza con /
-    $ruta_relativa = ltrim($p['url_carpeta'], '/'); 
+    $ruta_relativa = ltrim($p['url_carpeta'], '/');
     $dir_path = __DIR__ . '/' . $ruta_relativa;
-    
+
     $files = [];
     if (is_dir($dir_path)) {
         $scanned_files = array_diff(scandir($dir_path), array('..', '.'));
-        foreach($scanned_files as $file) {
+        foreach ($scanned_files as $file) {
             // Asegurar que la ruta comience con '/' para URLs
             $url_base = '/' . $ruta_relativa;
             $files[] = $url_base . $file;
@@ -35,6 +35,7 @@ foreach ($pedidos as $p) {
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -67,7 +68,7 @@ foreach ($pedidos as $p) {
             background: var(--card-bg);
             padding: 20px 30px;
             border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
         }
 
         h1 {
@@ -90,7 +91,7 @@ foreach ($pedidos as $p) {
             border-radius: 8px;
             transition: background 0.2s;
         }
-        
+
         .btn-logout:hover {
             background: #fee2e2;
         }
@@ -98,7 +99,7 @@ foreach ($pedidos as $p) {
         .table-container {
             background: var(--card-bg);
             border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
             overflow-x: auto;
         }
 
@@ -143,10 +144,25 @@ foreach ($pedidos as $p) {
         }
 
         /* Colores de Badges */
-        .status-pendiente { background: #fef3c7; color: #b45309; }
-        .status-impreso { background: #d1fae5; color: #047857; }
-        .status-empaquetado { background: #e0e7ff; color: #4338ca; }
-        .status-entregado { background: #f3f4f6; color: #374151; }
+        .status-pendiente {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .status-impreso {
+            background: #d1fae5;
+            color: #047857;
+        }
+
+        .status-empaquetado {
+            background: #e0e7ff;
+            color: #4338ca;
+        }
+
+        .status-entregado {
+            background: #f3f4f6;
+            color: #374151;
+        }
 
         .btn-primary {
             background: var(--primary);
@@ -178,8 +194,10 @@ foreach ($pedidos as $p) {
             transition: background 0.2s;
             font-weight: 500;
         }
-        
-        .btn-download:hover { background: #4a5568; }
+
+        .btn-download:hover {
+            background: #4a5568;
+        }
 
         .form-status {
             display: flex;
@@ -212,8 +230,10 @@ foreach ($pedidos as $p) {
             font-weight: 500;
             transition: 0.2s;
         }
-        
-        .btn-update:hover { background: #1a202c; }
+
+        .btn-update:hover {
+            background: #1a202c;
+        }
 
         /* Modal Styles */
         .modal {
@@ -243,8 +263,15 @@ foreach ($pedidos as $p) {
         }
 
         @keyframes modalFadeIn {
-            from { opacity: 0; transform: translateY(-20px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
         .modal-header {
@@ -270,7 +297,9 @@ foreach ($pedidos as $p) {
             transition: color 0.2s;
         }
 
-        .close:hover { color: #4a5568; }
+        .close:hover {
+            color: #4a5568;
+        }
 
         .modal-body {
             padding: 24px;
@@ -292,8 +321,18 @@ foreach ($pedidos as $p) {
             flex: 1;
         }
 
-        .mockup-info h3 { margin-top: 0; margin-bottom: 12px; color: var(--text); }
-        .mockup-info p { color: #718096; line-height: 1.5; margin-bottom: 16px; font-size: 14px;}
+        .mockup-info h3 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        .mockup-info p {
+            color: #718096;
+            line-height: 1.5;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
 
         .mockup-img-wrapper {
             width: 200px;
@@ -328,7 +367,13 @@ foreach ($pedidos as $p) {
             background: #fff;
         }
 
-        .print-card h3 { margin-top: 0; font-size: 16px; color: var(--text); margin-bottom: 16px;}
+        .print-card h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: var(--text);
+            margin-bottom: 16px;
+        }
+
         .print-card img {
             width: 100%;
             height: 150px;
@@ -343,7 +388,10 @@ foreach ($pedidos as $p) {
             padding-top: 24px;
         }
 
-        .originals-section h3 { margin-top: 0; margin-bottom: 16px; }
+        .originals-section h3 {
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
 
         .originals-grid {
             display: grid;
@@ -372,11 +420,11 @@ foreach ($pedidos as $p) {
             margin-bottom: 12px;
             background: #f8f9fa;
         }
-        
+
         .original-item .btn-download {
             margin-top: auto;
         }
-        
+
         .empty-warning {
             color: #718096;
             font-style: italic;
@@ -388,12 +436,17 @@ foreach ($pedidos as $p) {
         }
     </style>
 </head>
+
 <body>
 
     <header>
-        <h1>✨ Panel de Administración Tokyo Shop</h1>
+        <h1>Panel de Administración Tokyo Shop</h1>
         <a href="logout.php" class="btn-logout">
-            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                </path>
+            </svg>
             Cerrar Sesión
         </a>
     </header>
@@ -412,44 +465,53 @@ foreach ($pedidos as $p) {
             </thead>
             <tbody>
                 <?php foreach ($pedidos as $p): ?>
-                <tr>
-                    <td>
-                        <strong style="color:var(--primary); font-size:15px;">#<?php echo htmlspecialchars($p['id_orden']); ?></strong>
-                    </td>
-                    <td>
-                        <strong style="font-size: 15px; display:block; margin-bottom:4px;"><?php echo htmlspecialchars($p['nombre_cliente']); ?></strong>
-                        <span style="color: #718096; font-size: 13px;">
-                            📞 <?php echo htmlspecialchars($p['whatsapp']); ?><br>
-                            ✉️ <?php echo htmlspecialchars($p['email']); ?>
-                        </span>
-                    </td>
-                    <td>
-                        <div style="font-weight: 500; margin-bottom:4px;">Camara <?php echo htmlspecialchars($p['modelo']); ?></div>
-                        <span style="color: #718096; font-size: 13px;">📸 <?php echo htmlspecialchars($p['storage']); ?> fotos</span>
-                    </td>
-                    <td>
-                        <span class="status-badge status-<?php echo strtolower($p['estado_pago']); ?>">
-                            <?php echo htmlspecialchars($p['estado_pago']); ?>
-                        </span>
-                    </td>
-                    <td>
-                        <button type="button" class="btn-primary" onclick="openModal('<?php echo htmlspecialchars($p['id_orden']); ?>')">
-                            Ver Archivos
-                        </button>
-                    </td>
-                    <td>
-                        <form method="POST" class="form-status">
-                            <input type="hidden" name="pedido_id" value="<?php echo htmlspecialchars($p['id']); ?>">
-                            <select name="nuevo_estado" class="form-select">
-                                <option value="pendiente" <?php echo $p['estado_pago']=='pendiente'?'selected':''; ?>>Pendiente</option>
-                                <option value="impreso" <?php echo $p['estado_pago']=='impreso'?'selected':''; ?>>Impreso</option>
-                                <option value="empaquetado" <?php echo $p['estado_pago']=='empaquetado'?'selected':''; ?>>Empaquetado</option>
-                                <option value="entregado" <?php echo $p['estado_pago']=='entregado'?'selected':''; ?>>Entregado</option>
-                            </select>
-                            <button type="submit" name="update_status" class="btn-update">Guardar</button>
-                        </form>
-                    </td>
-                </tr>
+                    <tr>
+                        <td>
+                            <strong
+                                style="color:var(--primary); font-size:15px;">#<?php echo htmlspecialchars($p['id_orden']); ?></strong>
+                        </td>
+                        <td>
+                            <strong
+                                style="font-size: 15px; display:block; margin-bottom:4px;"><?php echo htmlspecialchars($p['nombre_cliente']); ?></strong>
+                            <span style="color: #718096; font-size: 13px;">
+                                📞 <?php echo htmlspecialchars($p['whatsapp']); ?><br>
+                                ✉️ <?php echo htmlspecialchars($p['email']); ?>
+                            </span>
+                        </td>
+                        <td>
+                            <div style="font-weight: 500; margin-bottom:4px;">Camara
+                                <?php echo htmlspecialchars($p['modelo']); ?>
+                            </div>
+                            <span style="color: #718096; font-size: 13px;">📸 <?php echo htmlspecialchars($p['storage']); ?>
+                                fotos</span>
+                        </td>
+                        <td>
+                            <span class="status-badge status-<?php echo strtolower($p['estado_pago']); ?>">
+                                    <?php echo htmlspecialchars($p['estado_pago']); ?>
+                            </span>
+                        </td>
+                        <td>
+                            <button type="button" class="btn-primary"
+                                onclick="openModal('<?php echo htmlspecialchars($p['id_orden']); ?>')">
+                                Ver Archivos
+                            </button>
+                        </td>
+                        <td>
+                            <form method="POST" class="form-status">
+                                <input type="hidden" name="pedido_id" value="<?php echo htmlspecialchars($p['id']); ?>">
+                                <select name="nuevo_estado" class="form-select">
+                                    <option value="pendiente" <?php echo $p['estado_pago'] == 'pendiente' ? 'selected' : ''; ?>>
+                                        Pendiente</option>
+                                    <option value="impreso" <?php echo $p['estado_pago'] == 'impreso' ? 'selected' : ''; ?>>
+                                        Impreso</option>
+                                    <option value="empaquetado" <?php echo $p['estado_pago'] == 'empaquetado' ? 'selected' : ''; ?>>Empaquetado</option>
+                                    <option value="entregado" <?php echo $p['estado_pago'] == 'entregado' ? 'selected' : ''; ?>>
+                                        Entregado</option>
+                                </select>
+                                <button type="submit" name="update_status" class="btn-update">Guardar</button>
+                            </form>
+                        </td>
+                    </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
@@ -463,13 +525,14 @@ foreach ($pedidos as $p) {
                 <span class="close" onclick="closeModal()">&times;</span>
             </div>
             <div class="modal-body">
-                
+
                 <!-- Mockup Section -->
                 <div class="mockup-container" id="mockupSection" style="display:none;">
                     <div class="mockup-info">
                         <h3>Mockup del Diseño</h3>
                         <p>Esta es la previsualización del diseño que hizo el cliente en el frontend.</p>
-                        <a id="btnDescargarMockup" href="" download="mockup.png" class="btn-download">⬇️ Descargar Mockup</a>
+                        <a id="btnDescargarMockup" href="" download="mockup.png" class="btn-download">⬇️ Descargar
+                            Mockup</a>
                     </div>
                     <div class="mockup-img-wrapper">
                         <img id="mockupImg" src="" alt="Mockup">
@@ -481,12 +544,14 @@ foreach ($pedidos as $p) {
                     <div class="print-card" id="frenteCard" style="display:none;">
                         <h3>Impresión: Frente</h3>
                         <img id="frenteImg" src="" alt="Frente">
-                        <a id="btnDescargarFrente" href="" download="frente.png" class="btn-download">⬇️ Descargar Frente</a>
+                        <a id="btnDescargarFrente" href="" download="frente.png" class="btn-download">⬇️ Descargar
+                            Frente</a>
                     </div>
                     <div class="print-card" id="dorsoCard" style="display:none;">
                         <h3>Impresión: Dorso</h3>
                         <img id="dorsoImg" src="" alt="Dorso">
-                        <a id="btnDescargarDorso" href="" download="dorso.png" class="btn-download">⬇️ Descargar Dorso</a>
+                        <a id="btnDescargarDorso" href="" download="dorso.png" class="btn-download">⬇️ Descargar
+                            Dorso</a>
                     </div>
                 </div>
 
@@ -516,14 +581,14 @@ foreach ($pedidos as $p) {
             document.getElementById('frenteCard').style.display = 'none';
             document.getElementById('dorsoCard').style.display = 'none';
             document.getElementById('originalesList').innerHTML = '';
-            
+
             let originalsCount = 0;
 
             if (data.files_list && data.files_list.length > 0) {
                 data.files_list.forEach(file => {
                     const parts = file.split('/');
                     const filename = parts[parts.length - 1].toLowerCase();
-                    
+
                     if (filename.includes('mockup')) {
                         document.getElementById('mockupImg').src = file;
                         document.getElementById('btnDescargarMockup').href = file;
@@ -554,7 +619,7 @@ foreach ($pedidos as $p) {
             if (originalsCount === 0) {
                 document.getElementById('originalesList').innerHTML = '<li class="empty-warning">No hay fotos originales asociadas a este pedido.</li>';
             }
-            
+
             document.getElementById('originalsCount').innerText = originalsCount;
             document.getElementById('fileModal').style.display = 'block';
         }
@@ -564,7 +629,7 @@ foreach ($pedidos as $p) {
         }
 
         // Cerrar al clickear afuera del modal
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             const modal = document.getElementById('fileModal');
             if (event.target === modal) {
                 closeModal();
@@ -572,11 +637,12 @@ foreach ($pedidos as $p) {
         }
 
         // Cerrar con Escape
-        document.addEventListener('keydown', function(event) {
+        document.addEventListener('keydown', function (event) {
             if (event.key === "Escape") {
                 closeModal();
             }
         });
     </script>
 </body>
+
 </html>
