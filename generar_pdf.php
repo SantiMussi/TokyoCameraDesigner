@@ -88,18 +88,18 @@ try {
         // Calculamos el centro de la caja destino en el PDF
         $cx = $x_dorso + ($w_print / 2);
         $cy = $y_dorso + ($h_print / 2);
-        
+
         // Rotamos 90 grados (cambiar a -90 si se necesita orientar al revés)
         $pdf->Rotate(90, $cx, $cy);
-        
+
         // Como la imagen origen (del canvas) es apaisada y la queremos encajar 
         // en el espacio vertical, invertimos ancho y alto para dibujarla
         $img_w = $h_print; // 95
         $img_h = $w_print; // 55
-        
+
         $img_x = $cx - ($img_w / 2);
         $img_y = $cy - ($img_h / 2);
-        
+
         $pdf->Image($path_dorso, $img_x, $img_y, $img_w, $img_h, 'PNG');
         $pdf->StopTransform();
     }
@@ -109,15 +109,15 @@ try {
         $pdf->StartTransform();
         $cx = $x_frente + ($w_print / 2);
         $cy = $y_frente + ($h_print / 2);
-        
+
         $pdf->Rotate(90, $cx, $cy);
-        
+
         $img_w = $h_print;
         $img_h = $w_print;
-        
+
         $img_x = $cx - ($img_w / 2);
         $img_y = $cy - ($img_h / 2);
-        
+
         $pdf->Image($path_frente, $img_x, $img_y, $img_w, $img_h, 'PNG');
         $pdf->StopTransform();
     }
