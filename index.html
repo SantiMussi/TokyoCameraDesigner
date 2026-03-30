@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Designer | Customiza tu Descartable</title>
+    <meta name="description"
+        content="Diseña tu propia cámara descartable. Sube imágenes, ajusta y previsualiza en tiempo real.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <header>
+                <h1>Tokyo Designer</h1>
+                <p>Personaliza tu experiencia</p>
+            </header>
+
+            <div class="control-group">
+                <h3>1. Elige el Modelo</h3>
+                <div class="options-grid">
+                    <button class="model-btn active" data-model="V1">Modelo V1</button>
+                    <button class="model-btn" data-model="V2">Modelo V2</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>2. Selecciona la Cara</h3>
+                <div class="options-grid">
+                    <button class="face-btn active" data-face="FRENTE">Frente</button>
+                    <button class="face-btn" data-face="DORSO">Dorso</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>3. Cantidad de fotos</h3>
+                <div class="options-grid grid-3">
+                    <button class="storage-btn active" data-storage="18">18</button>
+                    <button class="storage-btn" data-storage="24">24</button>
+                    <button class="storage-btn" data-storage="36">36</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>4. Diseña</h3>
+                <label for="imageUpload" class="upload-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Subir Imagen
+                </label>
+                <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                <p class="hint">Puedes arrastrar, rotar y escalar tu imagen libremente sobre la cámara.</p>
+            </div>
+
+            <div class="control-group action-group">
+                <button id="finishDesignBtn" class="primary-btn">Finalizar Diseño</button>
+            </div>
+        </aside>
+
+        <!-- Main Canvas Area -->
+        <main class="canvas-area">
+            <div class="zoom-toolbar">
+                <button id="zoomOutBtn" title="Alejar">-</button>
+                <span id="zoomVal">100%</span>
+                <button id="zoomInBtn" title="Acercar">+</button>
+            </div>
+
+            <div class="canvas-wrapper">
+                <canvas id="cameraCanvas"></canvas>
+            </div>
+        </main>
+    </div>
+
+    <!-- Fabric JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <!-- Custom JS -->
+    <script src="js/app.js"></script>
+</body>
+
+</html>
