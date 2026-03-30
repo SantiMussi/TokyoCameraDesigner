@@ -15,18 +15,20 @@ $modelo = isset($data['modelo']) ? $data['modelo'] : 'V1';
 $storage = isset($data['storage']) ? $data['storage'] : '24';
 
 // ---------------------------------------------------------
-// COORDENADAS PARA UNA SOLA CÁMARA (UNIDADES EN MM)
+// COORDENADAS PARA LA CÁMARA EN VERTICAL (UNIDADES EN MM)
 // ---------------------------------------------------------
-$w_frente = 90; // Ancho
-$h_frente = 50; // Alto
-$w_dorso = 90;
-$h_dorso = 50;
+// El canvas es apaisado, pero en el PDF irá rotado 90 grados.
+// Por lo tanto, definimos el tamaño final que ocupará en el PDF:
+$w_print = 55; // Ancho ocupado en el PDF
+$h_print = 95; // Alto ocupado en el PDF
 
-$x_frente = 10; // Posición X frente
-$y_frente = 10; // Posición Y frente
+// Coordenadas para el Dorso (Arriba)
+$x_dorso = 20; // Posición X dorso
+$y_dorso = 10; // Posición Y dorso
 
-$x_dorso = 110; // Posición X dorso
-$y_dorso = 10;  // Posición Y dorso
+// Coordenadas para el Frente (Abajo)
+$x_frente = 20; // Posición X frente
+$y_frente = 110; // Posición Y frente
 
 // Directorios
 $uploads_dir = __DIR__ . '/uploads/';
@@ -79,14 +81,45 @@ try {
         $size = ['height' => 210]; // Backup por si falla
     }
 
-    // Dibujar el Frente
-    if (file_exists($path_frente)) {
-        $pdf->Image($path_frente, $x_frente, $y_frente, $w_frente, $h_frente, 'PNG');
+    // Dibujar el Dorso (Arriba)
+    // Usamos StartTransform y Rotate porque TCPDF no tiene parámetro de rotación directo en Image()
+    if (file_exists($path_dorso)) {
+        $pdf->StartTransform();
+        // Calculamos el centro de la caja destino en el PDF
+        $cx = $x_dorso + ($w_print / 2);
+        $cy = $y_dorso + ($h_print / 2);
+        
+        // Rotamos 90 grados (cambiar a -90 si se necesita orientar al revés)
+        $pdf->Rotate(90, $cx, $cy);
+        
+        // Como la imagen origen (del canvas) es apaisada y la queremos encajar 
+        // en el espacio vertical, invertimos ancho y alto para dibujarla
+        $img_w = $h_print; // 95
+        $img_h = $w_print; // 55
+        
+        $img_x = $cx - ($img_w / 2);
+        $img_y = $cy - ($img_h / 2);
+        
+        $pdf->Image($path_dorso, $img_x, $img_y, $img_w, $img_h, 'PNG');
+        $pdf->StopTransform();
     }
 
-    // Dibujar el Dorso
-    if (file_exists($path_dorso)) {
-        $pdf->Image($path_dorso, $x_dorso, $y_dorso, $w_dorso, $h_dorso, 'PNG');
+    // Dibujar el Frente (Abajo)
+    if (file_exists($path_frente)) {
+        $pdf->StartTransform();
+        $cx = $x_frente + ($w_print / 2);
+        $cy = $y_frente + ($h_print / 2);
+        
+        $pdf->Rotate(90, $cx, $cy);
+        
+        $img_w = $h_print;
+        $img_h = $w_print;
+        
+        $img_x = $cx - ($img_w / 2);
+        $img_y = $cy - ($img_h / 2);
+        
+        $pdf->Image($path_frente, $img_x, $img_y, $img_w, $img_h, 'PNG');
+        $pdf->StopTransform();
     }
 
     // Info de la orden al pie
