@@ -24,11 +24,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Keep track of the file paths for the masks/templates
     const templates = {
         'V1-FRENTE': 'Fotos/DESCARTABLE_V1_FRENTE.png',
-        'V1-DORSO': 'Fotos/DESCARTABLE V1 DORSO.png',
-        'V2-FRENTE': 'Fotos/DESCARTABLE V2 FRENTE.png',
-        'V2-DORSO': 'Fotos/DESCARTABLE V2 DORSO.png'
+        'V1-DORSO': 'Fotos/DESCARTABLE_V1_DORSO.png',
+        'V2-FRENTE': 'Fotos/DESCARTABLE_V2_FRENTE.png',
+        'V2-DORSO': 'Fotos/DESCARTABLE_V2_DORSO.png'
     };
-
     // Cache to store the user's designs for each face
     const savedDesigns = {};
     let currentClipPath = null; // Store the active clipping boundaries
