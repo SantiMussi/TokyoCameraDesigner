@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Keep track of the file paths for the masks/templates
     const templates = {
-        'V1-FRENTE': 'Fotos/DESCARTABLE V1 FRENTE.png',
+        'V1-FRENTE': 'Fotos/DESCARTABLE_V1_FRENTE.png',
         'V1-DORSO': 'Fotos/DESCARTABLE V1 DORSO.png',
         'V2-FRENTE': 'Fotos/DESCARTABLE V2 FRENTE.png',
         'V2-DORSO': 'Fotos/DESCARTABLE V2 DORSO.png'
@@ -248,31 +248,31 @@ document.addEventListener('DOMContentLoaded', () => {
             // Guardamos el background actual
             const tempBg = canvas.backgroundColor;
             const tempOverlay = canvas.overlayImage;
-            
+
             // Forzamos transparente y quitamos overaly original
             canvas.backgroundColor = null;
             canvas.overlayImage = null;
             canvas.renderAll();
-            
+
             // Exportamos
             const dataUrl = canvas.toDataURL({
                 format: 'png',
                 quality: 1,
                 multiplier: 4 // Alta resolución de impresión solicitada
             });
-            
+
             // Restauramos
             canvas.backgroundColor = tempBg;
             canvas.overlayImage = tempOverlay;
             canvas.renderAll();
-            
+
             return dataUrl;
         };
 
         // 3. Exportar cara activa
         const activeFace = state.face;
         const otherFace = activeFace === 'FRENTE' ? 'DORSO' : 'FRENTE';
-        
+
         const activeFaceBase64 = exportCleanCanvasBase64();
 
         // 4. Movernos "silenciosamente" a la otra cara para exportarla
@@ -280,8 +280,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeKey = `${state.model}-${activeFace}`;
         const otherKey = `${state.model}-${otherFace}`;
         savedDesigns[activeKey] = canvas.getObjects().map(obj => obj.toObject());
-        
-        canvas.clear(); 
+
+        canvas.clear();
         let otherFaceBase64 = null;
 
         await new Promise((resolve) => {
@@ -327,9 +327,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            
+
             const result = await response.json();
-            
+
             if (result.success) {
                 alert('¡Diseño enviado a impresión correctamente!');
                 console.log('Ruta del PDF:', result.pdf_url);
