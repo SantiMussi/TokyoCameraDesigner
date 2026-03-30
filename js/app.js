@@ -291,31 +291,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, c.width, c.height);
 
-            // Estrellitas en tono rosa para que contrasten
-            ctx.fillStyle = '#ff7bb4';
-            const drawStar = (x, y, r) => {
-                ctx.beginPath();
-                for (let i = 0; i < 5; i++) {
-                    ctx.lineTo(x + Math.cos((18 + i * 72) / 180 * Math.PI) * r, y - Math.sin((18 + i * 72) / 180 * Math.PI) * r);
-                    ctx.lineTo(x + Math.cos((54 + i * 72) / 180 * Math.PI) * (r / 2.5), y - Math.sin((54 + i * 72) / 180 * Math.PI) * (r / 2.5));
-                }
-                ctx.closePath();
-                ctx.fill();
-            };
-
-            const stars = [
-                [100, 100, 25], [880, 180, 25], [120, 460, 22], [900, 680, 22],
-                [80, 800, 20], [920, 1050, 25], [150, 1200, 30], [860, 1400, 20],
-                [500, 40, 20], [550, 1550, 22], [200, 700, 15]
-            ];
-            stars.forEach(s => drawStar(s[0], s[1], s[2]));
-
-            // Texto MOCK UP en color rosa
-            ctx.fillStyle = '#ff7bb4';
-            ctx.font = 'bold 50px "Arial Rounded MT Bold", "Varela Round", sans-serif';
-            ctx.textAlign = 'right';
-            ctx.fillText("MOCK UP", 960, 90);
-
             const loadImg = (src) => new Promise(res => {
                 if (!src) return res(null);
                 const img = new Image(); img.onload = () => res(img); img.src = src;
