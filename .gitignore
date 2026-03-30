@@ -1,1 +1,4 @@
 db.php
+sess_*
+config_admin.php
+pedidos/
