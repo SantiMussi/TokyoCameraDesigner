@@ -395,10 +395,18 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+        // Capturar datos del Modal (si existen)
+        const clientName = document.getElementById('clientName') ? document.getElementById('clientName').value : '';
+        const clientEmail = document.getElementById('clientEmail') ? document.getElementById('clientEmail').value : '';
+        const clientWhatsapp = document.getElementById('clientWhatsapp') ? document.getElementById('clientWhatsapp').value : '';
+
         // 6. Preparar JSON y enviar al backend PHP
         const payload = {
             modelo: state.model,
             storage: state.storage,
+            nombre_cliente: clientName,
+            email: clientEmail,
+            whatsapp: clientWhatsapp,
             // Guardamos las limpiezas por las dudas
             imagen_frente: activeFace === 'FRENTE' ? activeFaceCleanBase64 : otherFaceCleanBase64,
             imagen_dorso: activeFace === 'DORSO' ? activeFaceCleanBase64 : otherFaceCleanBase64,
@@ -416,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
 
             if (result.success) {
-                alert('¡Diseño guardado correctamente en tu carpeta de pedidos!');
+                alert(`¡Diseño guardado exitosamente! Tu orden es: ${result.id_orden}`);
                 console.log('Carpeta del pedido:', result.folder_url);
             } else {
                 alert('Hubo un error en el servidor: ' + result.error);

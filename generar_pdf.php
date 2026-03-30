@@ -1,4 +1,5 @@
 <?php
+require_once 'db.php';
 header('Content-Type: application/json');
 
 // Leer JSON enviado por Fetch
@@ -13,6 +14,9 @@ $imagen_frente = isset($data['imagen_frente']) ? $data['imagen_frente'] : null;
 $imagen_dorso = isset($data['imagen_dorso']) ? $data['imagen_dorso'] : null;
 $modelo = isset($data['modelo']) ? $data['modelo'] : 'V1';
 $storage = isset($data['storage']) ? $data['storage'] : '24';
+$nombre_cliente = isset($data['nombre_cliente']) ? $data['nombre_cliente'] : '';
+$email = isset($data['email']) ? $data['email'] : '';
+$whatsapp = isset($data['whatsapp']) ? $data['whatsapp'] : '';
 
 $mockup = isset($data['mockup']) ? $data['mockup'] : null;
 $imagenes_utilizadas = isset($data['imagenes_utilizadas']) ? $data['imagenes_utilizadas'] : [];
@@ -20,7 +24,11 @@ $imagenes_utilizadas = isset($data['imagenes_utilizadas']) ? $data['imagenes_uti
 // Directorios
 $pedidos_dir = __DIR__ . '/pedidos/';
 $id_orden = time() . '_' . rand(1000, 9999);
-$orden_dir = $pedidos_dir . 'pedido_' . $id_orden . '/';
+$nombre_carpeta = 'pedido_' . $id_orden;
+$orden_dir = $pedidos_dir . $nombre_carpeta . '/';
+
+$url_carpeta = "/pedidos/" . $nombre_carpeta . "/";
+$url_mockup = $url_carpeta . "mockup.png";
 
 if (!file_exists($orden_dir)) {
     mkdir($orden_dir, 0777, true);
@@ -73,10 +81,38 @@ if (is_array($imagenes_utilizadas)) {
 }
 
 if ($savedAny) {
-    echo json_encode([
-        "success" => true,
-        "folder_url" => "/pedidos/pedido_" . $id_orden . "/"
-    ]);
+    // Guardar en la Base de Datos
+    try {
+        global $pdo, $conn, $conexion;
+        $db = null;
+        if (isset($pdo)) $db = $pdo;
+        elseif (isset($conn)) $db = $conn;
+        elseif (isset($conexion)) $db = $conexion;
+        
+        if ($db) {
+            $stmt = $db->prepare("INSERT INTO pedidos (id_orden, modelo, storage, nombre_cliente, email, whatsapp, url_mockup, url_carpeta, estado_pago) VALUES (:id_orden, :modelo, :storage, :nombre_cliente, :email, :whatsapp, :url_mockup, :url_carpeta, 'pendiente')");
+            $stmt->execute([
+                ':id_orden' => $id_orden,
+                ':modelo' => $modelo,
+                ':storage' => $storage,
+                ':nombre_cliente' => $nombre_cliente,
+                ':email' => $email,
+                ':whatsapp' => $whatsapp,
+                ':url_mockup' => $url_mockup,
+                ':url_carpeta' => $url_carpeta
+            ]);
+
+            echo json_encode([
+                "success" => true,
+                "id_orden" => $id_orden,
+                "folder_url" => $url_carpeta
+            ]);
+        } else {
+            echo json_encode(["success" => false, "error" => "No se encontró la variable de conexión PDO en db.php ($pdo, $conn, o $conexion)."]);
+        }
+    } catch (PDOException $e) {
+        echo json_encode(["success" => false, "error" => "Error de base de datos: " . $e->getMessage()]);
+    }
 } else {
     echo json_encode(["success" => false, "error" => "No se recibieron imágenes para guardar."]);
 }
