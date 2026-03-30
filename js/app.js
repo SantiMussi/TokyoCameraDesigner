@@ -389,13 +389,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const dorsoMockup = activeFace === 'DORSO' ? activeFaceMockupBase64 : otherFaceMockupBase64;
         const finalMockupBase64 = await generateCombinedMockup(frenteMockup, dorsoMockup);
 
+        // 5.6 Extraer las imágenes originales subidas por el usuario (una por una)
+        const usedImages = [];
+        ['FRENTE', 'DORSO'].forEach(face => {
+            const key = `${state.model}-${face}`;
+            const objects = savedDesigns[key] || [];
+            objects.forEach(obj => {
+                // Agregar solo las imágenes que el usuario subió
+                if (obj.type === 'image' && obj.src) {
+                    usedImages.push(obj.src);
+                }
+            });
+        });
+
         // 6. Preparar JSON y enviar al backend PHP
         const payload = {
             modelo: state.model,
             storage: state.storage,
+            // Guardamos las limpiezas por las dudas
             imagen_frente: activeFace === 'FRENTE' ? activeFaceCleanBase64 : otherFaceCleanBase64,
             imagen_dorso: activeFace === 'DORSO' ? activeFaceCleanBase64 : otherFaceCleanBase64,
-            mockup: finalMockupBase64
+            mockup: finalMockupBase64,
+            imagenes_utilizadas: usedImages
         };
 
         try {

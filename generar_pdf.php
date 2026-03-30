@@ -15,6 +15,7 @@ $modelo = isset($data['modelo']) ? $data['modelo'] : 'V1';
 $storage = isset($data['storage']) ? $data['storage'] : '24';
 
 $mockup = isset($data['mockup']) ? $data['mockup'] : null;
+$imagenes_utilizadas = isset($data['imagenes_utilizadas']) ? $data['imagenes_utilizadas'] : [];
 
 // Directorios
 $pedidos_dir = __DIR__ . '/pedidos/';
@@ -39,7 +40,7 @@ function saveBase64Image($base64String, $outputFile)
 
 $path_frente = $orden_dir . 'frente_impresion.png';
 $path_dorso  = $orden_dir . 'dorso_impresion.png';
-$path_mockup = $orden_dir . 'mockup_promocional.png';
+$path_mockup = $orden_dir . 'mockup.png'; // Requerido especificamente "el mockup de la forma que te mandé"
 
 $savedAny = false;
 
@@ -54,6 +55,20 @@ if ($imagen_dorso) {
 if ($mockup) {
     saveBase64Image($mockup, $path_mockup);
     $savedAny = true;
+}
+
+// Guardar las imágenes originales separadas
+if (is_array($imagenes_utilizadas)) {
+    foreach ($imagenes_utilizadas as $idx => $base64) {
+        $type = 'png';
+        if (preg_match('/^data:image\/(\w+);base64,/', $base64, $matches)) {
+            $type = strtolower($matches[1]);
+            if ($type == 'jpeg') $type = 'jpg';
+        }
+        $img_path = $orden_dir . 'imagen_original_' . ($idx + 1) . '.' . $type;
+        saveBase64Image($base64, $img_path);
+        $savedAny = true;
+    }
 }
 
 if ($savedAny) {
