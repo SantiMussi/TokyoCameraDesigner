@@ -287,21 +287,12 @@ document.addEventListener('DOMContentLoaded', () => {
             c.height = 1600;
             const ctx = c.getContext('2d');
 
-            // Fondo con difuminado (radial gradient) desde blanco en el centro hacia rosa afuera
-            const centerX = c.width / 2;
-            const centerY = c.height / 2;
-            const radius = Math.max(c.width, c.height) * 0.6; // Radio del difuminado
-            
-            const gradient = ctx.createRadialGradient(centerX, centerY, 100, centerX, centerY, radius);
-            gradient.addColorStop(0, '#ffffff');      // Centro blanco para disimular los bordes
-            gradient.addColorStop(0.4, '#ffffff');    // Se mantiene blanco para abarcar las cámaras
-            gradient.addColorStop(1, '#ff7bb4');      // Termina en rosa en los bordes
-            
-            ctx.fillStyle = gradient;
+            // Fondo totalmente blanco
+            ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, c.width, c.height);
 
-            // Estrellitas amarillas
-            ctx.fillStyle = '#faff60';
+            // Estrellitas en tono rosa para que contrasten
+            ctx.fillStyle = '#ff7bb4';
             const drawStar = (x, y, r) => {
                 ctx.beginPath();
                 for (let i = 0; i < 5; i++) {
@@ -319,8 +310,8 @@ document.addEventListener('DOMContentLoaded', () => {
             ];
             stars.forEach(s => drawStar(s[0], s[1], s[2]));
 
-            // Texto MOCK UP
-            ctx.fillStyle = '#ffffff';
+            // Texto MOCK UP en color rosa
+            ctx.fillStyle = '#ff7bb4';
             ctx.font = 'bold 50px "Arial Rounded MT Bold", "Varela Round", sans-serif';
             ctx.textAlign = 'right';
             ctx.fillText("MOCK UP", 960, 90);
