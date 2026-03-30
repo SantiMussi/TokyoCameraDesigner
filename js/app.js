@@ -317,23 +317,28 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.fillText("MOCK UP", 960, 90);
 
             const loadImg = (src) => new Promise(res => {
+                if (!src) return res(null);
                 const img = new Image(); img.onload = () => res(img); img.src = src;
             });
             const fImg = await loadImg(frenteB64);
             const dImg = await loadImg(dorsoB64);
 
             const targetW = 850;
-            let scale = targetW / fImg.width;
-            let targetH = fImg.height * scale;
+            let targetH = 0;
 
             // Dibujar Frente en top
-            ctx.drawImage(fImg, (c.width - targetW) / 2, 200, targetW, targetH);
-
-            scale = targetW / dImg.width;
-            let targetHDorso = dImg.height * scale;
+            if (fImg) {
+                let scale = targetW / fImg.width;
+                targetH = fImg.height * scale;
+                ctx.drawImage(fImg, (c.width - targetW) / 2, 200, targetW, targetH);
+            }
 
             // Dibujar Dorso abajo
-            ctx.drawImage(dImg, (c.width - targetW) / 2, 200 + targetH + 150, targetW, targetHDorso);
+            if (dImg) {
+                let scale = targetW / dImg.width;
+                let targetHDorso = dImg.height * scale;
+                ctx.drawImage(dImg, (c.width - targetW) / 2, 200 + (targetH || 600) + 150, targetW, targetHDorso);
+            }
 
             return c.toDataURL('image/png', 0.9);
         };
@@ -355,19 +360,32 @@ document.addEventListener('DOMContentLoaded', () => {
         let otherFaceMockupBase64 = null;
 
         await new Promise((resolve) => {
-            if (savedDesigns[otherKey] && savedDesigns[otherKey].length > 0) {
-                fabric.util.enlivenObjects(savedDesigns[otherKey], (objects) => {
-                    objects.forEach(obj => canvas.add(obj));
+            // Forzar estado temporal para cargar plantilla correctamente
+            state.face = otherFace;
+            loadTemplate(() => {
+                if (savedDesigns[otherKey] && savedDesigns[otherKey].length > 0) {
+                    fabric.util.enlivenObjects(savedDesigns[otherKey], (objects) => {
+                        objects.forEach(obj => {
+                            obj.clipPath = currentClipPath;
+                            canvas.add(obj);
+                        });
+                        canvas.renderAll();
+                        // Exportar ambos
+                        otherFaceCleanBase64 = exportCleanCanvasBase64();
+                        otherFaceMockupBase64 = exportMockupCanvasBase64();
+                        resolve();
+                    });
+                } else {
                     canvas.renderAll();
-                    // Exportar ambos
                     otherFaceCleanBase64 = exportCleanCanvasBase64();
                     otherFaceMockupBase64 = exportMockupCanvasBase64();
                     resolve();
-                });
-            } else {
-                resolve();
-            }
+                }
+            });
         });
+
+        // Restaurar estado de cara original
+        state.face = activeFace;
 
         // 5. Restaurar la vista original que estaba viendo el usuario
         canvas.clear();

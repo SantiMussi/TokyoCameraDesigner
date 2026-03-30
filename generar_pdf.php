@@ -39,7 +39,7 @@ function saveBase64Image($base64String, $outputFile)
 }
 
 $path_frente = $orden_dir . 'frente_impresion.png';
-$path_dorso  = $orden_dir . 'dorso_impresion.png';
+$path_dorso = $orden_dir . 'dorso_impresion.png';
 $path_mockup = $orden_dir . 'mockup.png'; // Requerido especificamente "el mockup de la forma que te mandé"
 
 $savedAny = false;
@@ -63,7 +63,8 @@ if (is_array($imagenes_utilizadas)) {
         $type = 'png';
         if (preg_match('/^data:image\/(\w+);base64,/', $base64, $matches)) {
             $type = strtolower($matches[1]);
-            if ($type == 'jpeg') $type = 'jpg';
+            if ($type == 'jpeg')
+                $type = 'jpg';
         }
         $img_path = $orden_dir . 'imagen_original_' . ($idx + 1) . '.' . $type;
         saveBase64Image($base64, $img_path);
