@@ -16,32 +16,46 @@ $storage = isset($data['storage']) ? $data['storage'] : '24';
 
 // ---------------------------------------------------------
 // COORDENADAS PARA LA INYECCIÓN EN EL PDF (UNIDADES EN MM)
-// Ajustar estos valores manualmente para encajar en la plantilla real
+// Ajustar estos valores midiendo con Illustrator sobre el esqueleto
 // ---------------------------------------------------------
-// Imagen Frente
-$x_frente = 10;
-$y_frente = 10;
-$w_frente = 90;
-$h_frente = 50;
+$w_frente = 90; // Ancho del diseño frente
+$h_frente = 50; // Alto del diseño frente
+$w_dorso = 90;  // Ancho del diseño dorso
+$h_dorso = 50;  // Alto del diseño dorso
 
-// Imagen Dorso
-$x_dorso = 110;
-$y_dorso = 10;
-$w_dorso = 90;
-$h_dorso = 50;
+// CÁMARA 1 (Arriba Izquierda)
+$c1_xf = 10;
+$c1_yf = 10;
+$c1_xd = 110;
+$c1_yd = 10;
+
+// CÁMARA 2 (Arriba Derecha)
+$c2_xf = 210;
+$c2_yf = 10;
+$c2_xd = 310;
+$c2_yd = 10;
+
+// CÁMARA 3 (Abajo Izquierda)
+$c3_xf = 10;
+$c3_yf = 150;
+$c3_xd = 110;
+$c3_yd = 150;
+
+// CÁMARA 4 (Abajo Derecha)
+$c4_xf = 210;
+$c4_yf = 150;
+$c4_xd = 310;
+$c4_yd = 150;
 
 // Directorios
 $uploads_dir = __DIR__ . '/uploads/';
 $pedidos_dir = __DIR__ . '/pedidos_impresion/';
 
-if (!file_exists($uploads_dir)) {
+if (!file_exists($uploads_dir))
     mkdir($uploads_dir, 0777, true);
-}
-if (!file_exists($pedidos_dir)) {
+if (!file_exists($pedidos_dir))
     mkdir($pedidos_dir, 0777, true);
-}
 
-// Función auxiliar para guardar Base64 como PNG temporal
 function saveBase64Image($base64String, $outputFile)
 {
     if (!$base64String)
@@ -63,61 +77,57 @@ if ($imagen_frente)
 if ($imagen_dorso)
     saveBase64Image($imagen_dorso, $path_dorso);
 
-// ---------------------------------------------------------
-// INTEGRACIÓN CON TCPDF Y FPDI
-// ---------------------------------------------------------
-// ACÁ ESTÁ EL CAMBIO: El autoload está activado
 require_once __DIR__ . '/vendor/autoload.php';
 
 try {
-    // ACÁ ESTÁ EL CAMBIO: Se borró el bloque de simulación
     $pdf = new \setasign\Fpdi\Tcpdf\Fpdi();
-
     $pdf->setPrintHeader(false);
     $pdf->setPrintFooter(false);
     $pdf->SetAutoPageBreak(false);
 
-    // Plantilla Base PDF a inyectar
-    $plantilla = __DIR__ . '/plantilla_base.pdf';
+    // Selección automática de plantilla según modelo (V1 o V2)
+    $plantilla = __DIR__ . '/plantilla_base_' . $modelo . '.pdf';
 
     if (file_exists($plantilla)) {
         $pdf->setSourceFile($plantilla);
         $tplId = $pdf->importPage(1);
         $size = $pdf->getTemplateSize($tplId);
-
         $pdf->AddPage($size['orientation'], array($size['width'], $size['height']));
         $pdf->useTemplate($tplId);
     } else {
-        // Crea una A4 Horizontal de rescate si no está la plantilla
         $pdf->AddPage('L', 'A4');
     }
 
-    // Dibujar el Frente en el PDF
-    if (file_exists($path_frente)) {
-        $pdf->Image($path_frente, $x_frente, $y_frente, $w_frente, $h_frente, 'PNG');
+    // Estampado de las 4 Cámaras
+    if (file_exists($path_frente) && file_exists($path_dorso)) {
+        // Cámara 1
+        $pdf->Image($path_frente, $c1_xf, $c1_yf, $w_frente, $h_frente, 'PNG');
+        $pdf->Image($path_dorso, $c1_xd, $c1_yd, $w_dorso, $h_dorso, 'PNG');
+
+        // Cámara 2
+        $pdf->Image($path_frente, $c2_xf, $c2_yf, $w_frente, $h_frente, 'PNG');
+        $pdf->Image($path_dorso, $c2_xd, $c2_yd, $w_dorso, $h_dorso, 'PNG');
+
+        // Cámara 3
+        $pdf->Image($path_frente, $c3_xf, $c3_yf, $w_frente, $h_frente, 'PNG');
+        $pdf->Image($path_dorso, $c3_xd, $c3_yd, $w_dorso, $h_dorso, 'PNG');
+
+        // Cámara 4
+        $pdf->Image($path_frente, $c4_xf, $c4_yf, $w_frente, $h_frente, 'PNG');
+        $pdf->Image($path_dorso, $c4_xd, $c4_yd, $w_dorso, $h_dorso, 'PNG');
     }
 
-    // Dibujar el Dorso en el PDF
-    if (file_exists($path_dorso)) {
-        $pdf->Image($path_dorso, $x_dorso, $y_dorso, $w_dorso, $h_dorso, 'PNG');
-    }
+    // Texto de info de la orden
+    $pdf->SetFont('helvetica', 'B', 10);
+    $pdf->SetXY(10, $size['height'] - 15);
+    $pdf->Cell(0, 10, "Orden: $id_orden | Modelo: $modelo | Fotos: $storage", 0, 0, 'L');
 
-    // Escribir texto complementario (ej. tipo de almacenamiento)
-    $pdf->SetFont('helvetica', 'B', 12);
-    $pdf->SetTextColor(0, 0, 0);
-    $pdf->SetXY(10, 70); // Posición debajo de las fotos
-    $pdf->Cell(0, 10, "Modelo: $modelo - Capacidad: $storage fotos", 0, 1, 'L');
-
-    // Guardar archivo final
     $pdf_filename = 'orden_' . $id_orden . '.pdf';
     $pdf_output = $pedidos_dir . $pdf_filename;
-
     $pdf->Output($pdf_output, 'F');
 
-    // Devolvemos el JSON de éxito
     echo json_encode([
         "success" => true,
-        "message" => "PDF Generado con éxito",
         "pdf_url" => "/pedidos_impresion/" . $pdf_filename
     ]);
 
