@@ -554,9 +554,10 @@ foreach ($pedidos as $p) {
                                     <button type="submit" name="update_status" class="btn-update">Guardar</button>
                                 </form>
                                 <form method="POST" style="margin:0;" id="deleteForm_<?php echo htmlspecialchars($p['id']); ?>" onsubmit="event.preventDefault(); customConfirm('¿Estás seguro de que deseas eliminar este pedido y todos sus archivos? Esta acción no se puede deshacer.', () => { document.getElementById('deleteForm_<?php echo htmlspecialchars($p['id']); ?>').submit(); }, 'Eliminar pedido', '🗑️');">
+                                    <input type="hidden" name="delete_pedido" value="1">
                                     <input type="hidden" name="pedido_id" value="<?php echo htmlspecialchars($p['id']); ?>">
                                     <input type="hidden" name="carpeta" value="<?php echo htmlspecialchars($p['url_carpeta']); ?>">
-                                    <button type="submit" name="delete_pedido" class="btn-delete" title="Eliminar pedido">🗑️</button>
+                                    <button type="submit" class="btn-delete" title="Eliminar pedido">🗑️</button>
                                 </form>
                             </div>
                         </td>
