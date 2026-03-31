@@ -299,19 +299,19 @@ foreach ($pedidos as $p) {
                     
                     <div style="margin-bottom: 15px;">
                         <label style="display:block; margin-bottom: 5px; font-weight: 600;">Cámara 18 fotos</label>
-                        <input type="number" name="precio_18" value="<?= htmlspecialchars($preciosData['18']) ?>" required class="form-select" style="width:100%; padding:10px;">
+                        <input type="number" name="precio_18" value="<?= (int)($preciosData['18'] ?? 50000) ?>" required class="form-select" style="width:100%; padding:10px;">
                     </div>
                     <div style="margin-bottom: 15px;">
                         <label style="display:block; margin-bottom: 5px; font-weight: 600;">Cámara 24 fotos</label>
-                        <input type="number" name="precio_24" value="<?= htmlspecialchars($preciosData['24']) ?>" required class="form-select" style="width:100%; padding:10px;">
+                        <input type="number" name="precio_24" value="<?= (int)($preciosData['24'] ?? 55000) ?>" required class="form-select" style="width:100%; padding:10px;">
                     </div>
                     <div style="margin-bottom: 15px;">
                         <label style="display:block; margin-bottom: 5px; font-weight: 600;">Cámara 36 fotos</label>
-                        <input type="number" name="precio_36" value="<?= htmlspecialchars($preciosData['36']) ?>" required class="form-select" style="width:100%; padding:10px;">
+                        <input type="number" name="precio_36" value="<?= (int)($preciosData['36'] ?? 65000) ?>" required class="form-select" style="width:100%; padding:10px;">
                     </div>
                     <div style="margin-bottom: 25px;">
                         <label style="display:block; margin-bottom: 5px; font-weight: 600;">Diseño Personalizado</label>
-                        <input type="number" name="precio_diseno" value="<?= htmlspecialchars($preciosData['diseno']) ?>" required class="form-select" style="width:100%; padding:10px;">
+                        <input type="number" name="precio_diseno" value="<?= (int)($preciosData['diseno'] ?? 45000) ?>" required class="form-select" style="width:100%; padding:10px;">
                     </div>
                     <button type="submit" class="btn-primary" style="width:100%;">Guardar Precios</button>
                 </form>
