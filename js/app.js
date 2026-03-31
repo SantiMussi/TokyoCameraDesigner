@@ -467,6 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Proceso silencioso para exportar la otra cara
         canvas.clear();
+        canvas.backgroundColor = '#ffffff';
         state.face = otherFace;
         let otherClean, otherMock;
 
@@ -474,13 +475,20 @@ document.addEventListener('DOMContentLoaded', () => {
             loadTemplate(() => {
                 if (savedDesigns[otherKey]) {
                     fabric.util.enlivenObjects(savedDesigns[otherKey], (objs) => {
-                        objs.forEach(o => canvas.add(o));
+                        objs.forEach(o => {
+                            o.clipPath = currentClipPath;
+                            canvas.add(o);
+                        });
                         canvas.renderAll();
                         otherClean = exportCleanCanvasBase64();
                         otherMock = exportMockupCanvasBase64();
                         resolve();
                     });
-                } else { resolve(); }
+                } else { 
+                    otherClean = exportCleanCanvasBase64();
+                    otherMock = exportMockupCanvasBase64();
+                    resolve(); 
+                }
             });
         });
 
@@ -522,6 +530,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             if (loader) loader.style.display = 'none';
             customAlert("Error de conexión con el servidor", "Error de red", "🔌");
+        } finally {
+            // Volver a la cara original
+            switchView(state.model, activeFace);
         }
 
         confirmOrderBtn.innerHTML = 'GUARDAR Y FINALIZAR';

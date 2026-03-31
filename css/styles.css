@@ -262,7 +262,7 @@ header p {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: rgba(255, 255, 255, 0.3);
+    background: #ffffff;
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.6);
     box-shadow: 0 10px 40px rgba(74, 21, 45, 0.05);
