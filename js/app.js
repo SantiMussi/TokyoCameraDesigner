@@ -320,6 +320,43 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // --- Calcular y mostrar resumen de pedido ---
+        const basePrices = {
+            '18': 50000,
+            '24': 55000,
+            '36': 65000
+        };
+        const qty = state.quantity || 1;
+        const storageVal = state.storage;
+        const camPriceUnit = basePrices[storageVal] || 50000;
+        const totalCamPrice = camPriceUnit * qty;
+        
+        let designPrice = 45000;
+        if (qty >= 10) {
+            designPrice = 0; // ¡Gratis a partir de 10 unidades!
+        }
+
+        const totalFinal = totalCamPrice + designPrice;
+
+        const sumCamType = document.getElementById('summaryCamType');
+        const sumCamPrice = document.getElementById('summaryCamPrice');
+        const sumDesignPrice = document.getElementById('summaryDesignPrice');
+        const sumTotal = document.getElementById('summaryTotal');
+
+        if (sumCamType) sumCamType.innerText = `Cámara (${storageVal} fotos) x${qty}`;
+        if (sumCamPrice) sumCamPrice.innerText = `$${totalCamPrice.toLocaleString('es-AR')}`;
+        
+        if (sumDesignPrice) {
+            if (designPrice === 0) {
+                sumDesignPrice.innerHTML = '<span style="color:#faff60; font-size:12px; text-transform:uppercase;">¡Bonificado!</span> $0';
+            } else {
+                sumDesignPrice.innerText = `$${designPrice.toLocaleString('es-AR')}`;
+            }
+        }
+        
+        if (sumTotal) sumTotal.innerText = `$${totalFinal.toLocaleString('es-AR')}`;
+        // ----------------------------------------------
+
         checkoutModal.style.display = 'flex';
     });
 
