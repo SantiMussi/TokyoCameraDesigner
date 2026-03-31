@@ -170,7 +170,8 @@
             <div style="margin-bottom:20px;">
                 <label
                     style="display:block; font-size:12px; font-weight:600; text-transform:uppercase; margin-bottom:5px;">WhatsApp</label>
-                <input type="tel" id="clientWhatsapp" placeholder="+54 9 11 ..."
+                <input type="tel" id="clientWhatsapp" placeholder="1123456789"
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '');" inputmode="numeric"
                     style="width:100%; padding:12px; border-radius:10px; border:none; background:rgba(255,255,255,0.9); color:#333; font-family:inherit;">
             </div>
 
