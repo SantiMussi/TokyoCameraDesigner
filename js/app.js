@@ -428,48 +428,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Función para remover el borde blanco externo (Chroma Key inteligente)
         // Solo remueve el blanco que esté conectado a los bordes, protegiendo el interior.
+        // Función para remover el borde blanco externo (Chroma Key inteligente optimizado)
         const removeWhiteBorder = (img) => {
             if (!img) return null;
             const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
+            const w = img.width;
+            const h = img.height;
+            canvas.width = w;
+            canvas.height = h;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
 
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(0, 0, w, h);
             const data = imageData.data;
-            const width = canvas.width;
-            const height = canvas.height;
+            const visited = new Uint8Array(w * h);
 
-            const visited = new Uint8Array(width * height);
+            // Pila plana para mayor rendimiento (evita colapsar la memoria del navegador)
             const stack = [];
 
-            // Empezamos desde todos los píxeles de los bordes externos
-            for (let x = 0; x < width; x++) {
-                stack.push([x, 0]);
-                stack.push([x, height - 1]);
-            }
-            for (let y = 1; y < height - 1; y++) {
-                stack.push([0, y]);
-                stack.push([width - 1, y]);
-            }
+            // Añadir todos los píxeles de los bordes externos a la pila inicial
+            for (let x = 0; x < w; x++) { stack.push(x, 0); stack.push(x, h - 1); }
+            for (let y = 0; y < h; y++) { stack.push(0, y); stack.push(w - 1, y); }
 
             while (stack.length > 0) {
-                const [x, y] = stack.pop();
-                const idx = (y * width + x);
+                const y = stack.pop();
+                const x = stack.pop();
+
+                if (x < 0 || x >= w || y < 0 || y >= h) continue;
+
+                const idx = y * w + x;
                 if (visited[idx]) continue;
                 visited[idx] = 1;
 
                 const p = idx * 4;
-                // Si el píxel es "blanco" (>250 en R, G y B) y no es ya transparente
-                if (data[p + 3] > 0 && data[p] > 250 && data[p + 1] > 250 && data[p + 2] > 250) {
-                    data[p + 3] = 0; // Lo volvemos transparente
 
-                    // Revisar vecinos (4-conectividad)
-                    if (x > 0) stack.push([x - 1, y]);
-                    if (x < width - 1) stack.push([x + 1, y]);
-                    if (y > 0) stack.push([x, y - 1]);
-                    if (y < height - 1) stack.push([x, y + 1]);
+                // Si el píxel es claro (blanco o gris del borde de suavizado) y no es transparente
+                // Usamos > 180 para comernos ese bordecito blanco difuminado sin tocar la cámara
+                if (data[p + 3] > 0 && data[p] > 180 && data[p + 1] > 180 && data[p + 2] > 180) {
+                    data[p + 3] = 0; // Lo volvemos 100% transparente
+
+                    // Revisar los 4 vecinos
+                    stack.push(x + 1, y);
+                    stack.push(x - 1, y);
+                    stack.push(x, y + 1);
+                    stack.push(x, y - 1);
                 }
             }
 
@@ -477,7 +479,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return canvas;
         };
 
-        // Generar Mockup combinado usando tokyomockupbg.jpg como fondo real
+        // Generar Mockup combinado
         const generateCombinedMockup = async (frenteB64, dorsoB64) => {
             const c = document.createElement('canvas');
             c.width = 1200;
@@ -488,26 +490,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!src) return res(null);
                 const img = new Image();
                 img.onload = () => res(img);
-                img.onerror = () => res(null); // Evitar que rompa si no encuentra la imagen
+                img.onerror = () => res(null);
                 img.src = src;
             });
 
-            // 1. Cargar el fondo (Asegurate de que esta ruta coincida con tu carpeta en el servidor)
+            // 1. Cargar el fondo
             const backgroundImg = await loadImg('/Fotos/tokyomockupbg.jpg');
 
             if (backgroundImg) {
-                // Dibujar la imagen de fondo cubriendo todo el canvas
-                ctx.drawImage(backgroundImg, 0, 0, c.width, c.height);
+                // Dibujar fondo estilo CSS "object-fit: cover" para que no se deforme
+                const canvasRatio = c.width / c.height;
+                const imgRatio = backgroundImg.width / backgroundImg.height;
+                let drawW = c.width;
+                let drawH = c.height;
+                let offsetX = 0;
+                let offsetY = 0;
+
+                if (imgRatio > canvasRatio) {
+                    drawW = c.height * imgRatio;
+                    offsetX = (c.width - drawW) / 2;
+                } else {
+                    drawH = c.width / imgRatio;
+                    offsetY = (c.height - drawH) / 2;
+                }
+                ctx.drawImage(backgroundImg, offsetX, offsetY, drawW, drawH);
             } else {
-                // Color fallback por si la imagen tarda en cargar o no se encuentra
                 ctx.fillStyle = '#ff7bb4';
                 ctx.fillRect(0, 0, c.width, c.height);
             }
 
-            // 2. Cargar frentes y dorsos diseñados y aplicar Color Keying para limpiar bordes
+            // 2. Cargar frentes y dorsos diseñados
             let fImg = await loadImg(frenteB64);
             let dImg = await loadImg(dorsoB64);
 
+            // MAGIA: Aplicar el filtro para remover el borde blanco de las cámaras
             if (fImg) fImg = removeWhiteBorder(fImg);
             if (dImg) dImg = removeWhiteBorder(dImg);
 
@@ -515,11 +531,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 3. Sombra paralela para separar las cámaras del fondo
             ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-            ctx.shadowBlur = 35;
+            ctx.shadowBlur = 40;
             ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 20;
+            ctx.shadowOffsetY = 25;
 
-            // 4. Superponer las cámaras en sus respectivas coordenadas
+            // 4. Superponer las cámaras
             if (fImg) {
                 let scale = targetW / fImg.width;
                 ctx.drawImage(fImg, 150, 230, targetW, fImg.height * scale);
@@ -529,9 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.drawImage(dImg, 150, 900, targetW, dImg.height * scale);
             }
 
-            // Restaurar sombras
             ctx.shadowColor = 'transparent';
-
             return c.toDataURL('image/jpeg', 0.9);
         };
 
