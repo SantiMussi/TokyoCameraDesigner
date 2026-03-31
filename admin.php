@@ -526,8 +526,11 @@ foreach ($pedidos as $p) {
                             </span>
                         </td>
                         <td>
-                            <div style="font-weight: 500; margin-bottom:4px;">Camara
-                                <?php echo htmlspecialchars($p['modelo']); ?>
+                            <div style="font-weight: 500; margin-bottom:4px; display: flex; align-items: center; gap: 6px;">
+                                <span style="background: var(--primary); color: white; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 700;">
+                                    <?php echo isset($p['cantidad']) ? htmlspecialchars($p['cantidad']) : '1'; ?>x
+                                </span>
+                                Cámara <?php echo htmlspecialchars($p['modelo']); ?>
                             </div>
                             <span style="color: #718096; font-size: 13px;">📸 <?php echo htmlspecialchars($p['storage']); ?>
                                 fotos</span>
