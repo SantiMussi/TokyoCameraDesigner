@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (sumDesignPrice) {
             if (designPrice === 0) {
-                sumDesignPrice.innerHTML = '<span style="color:#ff2a85; font-size:12px; font-weight:700; text-transform:uppercase;">¡Bonificado!</span> $0';
+                sumDesignPrice.innerHTML = '<span style="color:#faff60; font-size:12px; font-weight:700; text-transform:uppercase;">¡Bonificado!</span> $0';
             } else {
                 sumDesignPrice.innerText = `$${designPrice.toLocaleString('es-AR')}`;
             }
