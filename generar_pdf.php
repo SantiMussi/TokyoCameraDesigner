@@ -36,7 +36,7 @@ $url_carpeta = "/pedidos/" . $nombre_carpeta . "/";
 $url_mockup = $url_carpeta . "mockup.png";
 
 if (!file_exists($orden_dir)) {
-    mkdir($orden_dir, 0777, true);
+    mkdir($orden_dir, 0755, true);
 }
 
 function saveBase64Image($base64String, $outputFile)
