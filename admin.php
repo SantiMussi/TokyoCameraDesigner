@@ -395,6 +395,7 @@ foreach ($pedidos as $p) {
                 formData.append('ajax_update_status', '1');
                 formData.append('pedido_id', pedidoId);
                 formData.append('nuevo_estado', nuevoEstado);
+                formData.append('csrf_token', '<?= isset($_SESSION["csrf_token"]) ? $_SESSION["csrf_token"] : "" ?>');
 
                 try {
                     const res = await fetch('admin.php', { method: 'POST', body: formData });
