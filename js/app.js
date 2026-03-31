@@ -426,6 +426,57 @@ document.addEventListener('DOMContentLoaded', () => {
             return dataUrl;
         };
 
+        // Función para remover el borde blanco externo (Chroma Key inteligente)
+        // Solo remueve el blanco que esté conectado a los bordes, protegiendo el interior.
+        const removeWhiteBorder = (img) => {
+            if (!img) return null;
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const width = canvas.width;
+            const height = canvas.height;
+
+            const visited = new Uint8Array(width * height);
+            const stack = [];
+
+            // Empezamos desde todos los píxeles de los bordes externos
+            for (let x = 0; x < width; x++) {
+                stack.push([x, 0]);
+                stack.push([x, height - 1]);
+            }
+            for (let y = 1; y < height - 1; y++) {
+                stack.push([0, y]);
+                stack.push([width - 1, y]);
+            }
+
+            while (stack.length > 0) {
+                const [x, y] = stack.pop();
+                const idx = (y * width + x);
+                if (visited[idx]) continue;
+                visited[idx] = 1;
+
+                const p = idx * 4;
+                // Si el píxel es "blanco" (>250 en R, G y B) y no es ya transparente
+                if (data[p + 3] > 0 && data[p] > 250 && data[p + 1] > 250 && data[p + 2] > 250) {
+                    data[p + 3] = 0; // Lo volvemos transparente
+
+                    // Revisar vecinos (4-conectividad)
+                    if (x > 0) stack.push([x - 1, y]);
+                    if (x < width - 1) stack.push([x + 1, y]);
+                    if (y > 0) stack.push([x, y - 1]);
+                    if (y < height - 1) stack.push([x, y + 1]);
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+            return canvas;
+        };
+
         // Generar Mockup combinado usando tokyomockupbg.jpg como fondo real
         const generateCombinedMockup = async (frenteB64, dorsoB64) => {
             const c = document.createElement('canvas');
@@ -453,9 +504,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.fillRect(0, 0, c.width, c.height);
             }
 
-            // 2. Cargar frentes y dorsos diseñados
-            const fImg = await loadImg(frenteB64);
-            const dImg = await loadImg(dorsoB64);
+            // 2. Cargar frentes y dorsos diseñados y aplicar Color Keying para limpiar bordes
+            let fImg = await loadImg(frenteB64);
+            let dImg = await loadImg(dorsoB64);
+
+            if (fImg) fImg = removeWhiteBorder(fImg);
+            if (dImg) dImg = removeWhiteBorder(dImg);
 
             const targetW = 900;
 
