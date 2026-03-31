@@ -129,7 +129,7 @@ foreach ($pedidos as $p) {
             <button id="themeToggle"
                 style="background:transparent; border:none; cursor:pointer; font-size:20px; outline:none; transition:0.2s;"
                 title="Alternar Modo">
-                <span id="themeIcon">🌙</span>
+                <span id="themeIcon">&#x1F319;</span>
             </button>
             <a href="logout.php" class="btn-logout">
                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -355,7 +355,7 @@ foreach ($pedidos as $p) {
     <div id="toast" class="toast">Guardado correctamente</div>
 
     <script>
-        const PEDIDOS_ARCHIVOS = <?= json_encode($pedidos_js) ?>;
+        const PEDIDOS_ARCHIVOS = <?= json_encode($pedidos_js, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
         // Búsqueda
         document.getElementById('searchInput').addEventListener('input', function (e) {
@@ -484,7 +484,7 @@ foreach ($pedidos as $p) {
         const themeIcon = document.getElementById('themeIcon');
 
         function updateThemeIcon() {
-            themeIcon.innerText = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';
+            themeIcon.innerText = document.documentElement.getAttribute('data-theme') === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19';
         }
         updateThemeIcon();
 
