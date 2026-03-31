@@ -525,7 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (fImg) fImg = removeWhiteBorder(fImg);
             if (dImg) dImg = removeWhiteBorder(dImg);
 
-            const targetW = 900;
+            const targetW = 980;
 
             // 3. Sombra paralela para separar las cámaras del fondo
             ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
@@ -540,7 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (dImg) {
                 let scale = targetW / dImg.width;
-                ctx.drawImage(dImg, 150, 900, targetW, dImg.height * scale);
+                ctx.drawImage(dImg, 150, 840, targetW, dImg.height * scale);
             }
 
             ctx.shadowColor = 'transparent';
