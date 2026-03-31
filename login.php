@@ -8,7 +8,39 @@ require_once 'db.php';
 
 $error = ' ';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+$ip = $_SERVER['REMOTE_ADDR'];
+$intentos_file = 'intentos_login.json';
+$intentos_data = [];
+
+if (file_exists($intentos_file)) {
+    $intentos_data = json_decode(file_get_contents($intentos_file), true);
+    if (!is_array($intentos_data)) {
+        $intentos_data = [];
+    }
+}
+
+if (!isset($intentos_data[$ip])) {
+    $intentos_data[$ip] = ['intentos' => 0, 'ultimo_intento' => 0];
+}
+
+$datos_ip = $intentos_data[$ip];
+$bloqueado = false;
+$tiempo_bloqueo = 900; // 15 minutos en segundos
+$max_intentos = 5;
+
+// Chequear estado de bloqueo actual
+if ($datos_ip['intentos'] >= $max_intentos) {
+    if (time() - $datos_ip['ultimo_intento'] < $tiempo_bloqueo) {
+        $bloqueado = true;
+        $restante = ceil(($tiempo_bloqueo - (time() - $datos_ip['ultimo_intento'])) / 60);
+        $error = "Demasiados intentos fallidos. Tu IP está bloqueada por $restante minutos.";
+    } else {
+        // Expiró el tiempo de castigo
+        $datos_ip['intentos'] = 0;
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$bloqueado) {
     $user = $_POST['user'];
     $pass = $_POST['pass'];
 
@@ -17,10 +49,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $admin = $stmt->fetch();
 
     if ($admin && password_verify($pass, $admin['password'])) {
+        // Login exitoso: Resetear contador para la IP
+        $datos_ip['intentos'] = 0;
+        $datos_ip['ultimo_intento'] = time();
+        $intentos_data[$ip] = $datos_ip;
+        file_put_contents($intentos_file, json_encode($intentos_data, JSON_PRETTY_PRINT));
+
+        // 1. Prevención Fijación de Sesión (Session Fixation)
+        session_regenerate_id(true);
+        
         $_SESSION['admin_id'] = $admin['id'];
         header('Location: admin.php'); // Te manda al dashboard
         exit;
     } else {
+        // Login incorrecto: Sumar intento
+        $datos_ip['intentos'] += 1;
+        $datos_ip['ultimo_intento'] = time();
+        $intentos_data[$ip] = $datos_ip;
+        file_put_contents($intentos_file, json_encode($intentos_data, JSON_PRETTY_PRINT));
+
         $error = 'Usuario o contraseña incorrectos.';
     }
 }
