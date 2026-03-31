@@ -15,8 +15,17 @@ document.addEventListener('DOMContentLoaded', () => {
         height: CANVAS_HEIGHT,
         backgroundColor: "#ffffff",
         preserveObjectStacking: true,
-        uniScaleTransform: true
+        uniformScaling: true
     });
+
+    // Forzar escalado proporcional en controles laterales por defecto (Shift lo invierte)
+    if (fabric.controlsUtils && fabric.controlsUtils.scalingEqually) {
+        ['ml', 'mr', 'mt', 'mb'].forEach(pos => {
+            if (fabric.Object.prototype.controls[pos]) {
+                fabric.Object.prototype.controls[pos].actionHandler = fabric.controlsUtils.scalingEqually;
+            }
+        });
+    }
 
     // 2. Estado de la Aplicación
     const state = {
@@ -32,13 +41,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const qtyDisplay = document.getElementById('qtyDisplay');
 
     if (btnMinus && btnPlus && qtyDisplay) {
-        btnMinus.addEventListener('click', () => {
+        btnMinus.addEventListener('click', (e) => {
+            e.preventDefault();
             if (state.quantity > 1) {
                 state.quantity--;
                 qtyDisplay.textContent = state.quantity;
             }
         });
-        btnPlus.addEventListener('click', () => {
+        btnPlus.addEventListener('click', (e) => {
+            e.preventDefault();
             state.quantity++;
             qtyDisplay.textContent = state.quantity;
         });
