@@ -31,7 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <head>
     <meta charset="UTF-8">
-    <title>Tokyo Login</title>
+    <title>TokyoShop | Panel Admin</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <style>
         body {
             background: #ff7bb4;
