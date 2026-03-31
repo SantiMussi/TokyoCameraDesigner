@@ -2,6 +2,16 @@
 require_once 'admin_auth.php';
 check_login();
 
+// VALIDACIÓN CSRF ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+        header('HTTP/1.1 403 Forbidden');
+        die(json_encode(['success' => false, 'error' => 'Error de seguridad: Token CSRF inválido.']));
+    }
+}
+
+
+
 if (isset($_POST['ajax_update_status'])) {
     header('Content-Type: application/json');
     try {
@@ -45,10 +55,10 @@ if (isset($_POST['delete_pedido'])) {
 
 if (isset($_POST['save_precios'])) {
     $nuevos = [
-        "18" => (int)$_POST['precio_18'],
-        "24" => (int)$_POST['precio_24'],
-        "36" => (int)$_POST['precio_36'],
-        "diseno" => (int)$_POST['precio_diseno']
+        "18" => (int) $_POST['precio_18'],
+        "24" => (int) $_POST['precio_24'],
+        "36" => (int) $_POST['precio_36'],
+        "diseno" => (int) $_POST['precio_diseno']
     ];
     file_put_contents('precios.json', json_encode($nuevos, JSON_PRETTY_PRINT));
     header("Location: admin.php?updated=precios");
@@ -91,6 +101,7 @@ foreach ($pedidos as $p) {
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -105,20 +116,26 @@ foreach ($pedidos as $p) {
         }
     </script>
 </head>
+
 <body>
 
     <header>
         <h1>Panel de Administración Tokyo Shop</h1>
         <div style="display:flex; align-items:center; gap:15px;">
-            <button onclick="document.getElementById('preciosModal').style.display='block'" class="btn-primary" style="margin-right: 10px; padding: 6px 12px;">
+            <button onclick="document.getElementById('preciosModal').style.display='block'" class="btn-primary"
+                style="margin-right: 10px; padding: 6px 12px;">
                 ⚙️ Precios
             </button>
-            <button id="themeToggle" style="background:transparent; border:none; cursor:pointer; font-size:20px; outline:none; transition:0.2s;" title="Alternar Modo">
+            <button id="themeToggle"
+                style="background:transparent; border:none; cursor:pointer; font-size:20px; outline:none; transition:0.2s;"
+                title="Alternar Modo">
                 <span id="themeIcon">🌙</span>
             </button>
             <a href="logout.php" class="btn-logout">
                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                    </path>
                 </svg>
                 Cerrar Sesión
             </a>
@@ -175,65 +192,74 @@ foreach ($pedidos as $p) {
                     $estadoClass = strtolower($p['estado_pago']);
                     $searchData = strtolower($p['nombre_cliente'] . ' ' . $p['id_orden'] . ' ' . $p['modelo']);
                     ?>
-                        <tr class="pedido-row" data-estado="<?= $estadoClass ?>" data-search="<?= htmlspecialchars($searchData) ?>">
-                            <td>
-                                <strong class="text-primary">#<?= htmlspecialchars($p['id_orden']) ?></strong>
-                            </td>
-                            <td>
-                                <strong class="d-block mb-1"><?= htmlspecialchars($p['nombre_cliente']) ?></strong>
-                                <span class="text-muted text-sm">
-                                    📞 <?= htmlspecialchars($p['whatsapp']) ?><br>
-                                    ✉️ <?= htmlspecialchars($p['email']) ?>
+                    <tr class="pedido-row" data-estado="<?= $estadoClass ?>"
+                        data-search="<?= htmlspecialchars($searchData) ?>">
+                        <td>
+                            <strong class="text-primary">#<?= htmlspecialchars($p['id_orden']) ?></strong>
+                        </td>
+                        <td>
+                            <strong class="d-block mb-1"><?= htmlspecialchars($p['nombre_cliente']) ?></strong>
+                            <span class="text-muted text-sm">
+                                📞 <?= htmlspecialchars($p['whatsapp']) ?><br>
+                                ✉️ <?= htmlspecialchars($p['email']) ?>
+                            </span>
+                        </td>
+                        <td>
+                            <div class="fw-500 mb-1 d-flex gap-1">
+                                <span
+                                    class="badge-qty"><?= isset($p['cantidad']) ? htmlspecialchars($p['cantidad']) : '1' ?>x</span>
+                                Cámara <?= htmlspecialchars($p['modelo']) ?>
+                            </div>
+                            <span class="text-muted text-sm d-block mb-1">📸 <?= htmlspecialchars($p['storage']) ?>
+                                fotos</span>
+                            <?php
+                            $storage = $p['storage'];
+                            $qty = isset($p['cantidad']) ? (int) $p['cantidad'] : 1;
+                            $priceUnit = isset($preciosData[$storage]) ? $preciosData[$storage] : 50000;
+                            $totalCam = $priceUnit * $qty;
+                            $designCost = ($qty >= 10) ? 0 : $preciosData['diseno'];
+                            $totalOrder = $totalCam + $designCost;
+                            ?>
+                            <div style="margin-top: 5px;">
+                                <span class="badge"
+                                    style="background: rgba(255, 123, 180, 0.1); color: var(--primary-color); padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 13px; border: 1px solid rgba(255, 123, 180, 0.3);">
+                                    Total: $<?= number_format($totalOrder, 0, ',', '.') ?>
                                 </span>
-                            </td>
-                            <td>
-                                <div class="fw-500 mb-1 d-flex gap-1">
-                                    <span class="badge-qty"><?= isset($p['cantidad']) ? htmlspecialchars($p['cantidad']) : '1' ?>x</span>
-                                    Cámara <?= htmlspecialchars($p['modelo']) ?>
-                                </div>
-                                <span class="text-muted text-sm d-block mb-1">📸 <?= htmlspecialchars($p['storage']) ?> fotos</span>
-                                <?php
-                                    $storage = $p['storage'];
-                                    $qty = isset($p['cantidad']) ? (int)$p['cantidad'] : 1;
-                                    $priceUnit = isset($preciosData[$storage]) ? $preciosData[$storage] : 50000;
-                                    $totalCam = $priceUnit * $qty;
-                                    $designCost = ($qty >= 10) ? 0 : $preciosData['diseno'];
-                                    $totalOrder = $totalCam + $designCost;
-                                ?>
-                                <div style="margin-top: 5px;">
-                                    <span class="badge" style="background: rgba(255, 123, 180, 0.1); color: var(--primary-color); padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 13px; border: 1px solid rgba(255, 123, 180, 0.3);">
-                                        Total: $<?= number_format($totalOrder, 0, ',', '.') ?>
-                                    </span>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="status-badge status-<?= $estadoClass ?>" id="badge-<?= $p['id'] ?>">
-                                    <?= htmlspecialchars($p['estado_pago']) ?>
-                                </span>
-                            </td>
-                            <td>
-                                <button type="button" class="btn-primary" onclick="openModal('<?= htmlspecialchars($p['id_orden']) ?>')">
-                                    Ver Archivos
-                                </button>
-                            </td>
-                            <td>
-                                <div class="d-flex gap-2">
-                                    <select class="form-select status-select" data-id="<?= $p['id'] ?>">
-                                        <option value="pendiente" <?= $estadoClass == 'pendiente' ? 'selected' : '' ?>>Pendiente</option>
-                                        <option value="impreso" <?= $estadoClass == 'impreso' ? 'selected' : '' ?>>Impreso</option>
-                                        <option value="empaquetado" <?= $estadoClass == 'empaquetado' ? 'selected' : '' ?>>Empaquetado</option>
-                                        <option value="entregado" <?= $estadoClass == 'entregado' ? 'selected' : '' ?>>Entregado</option>
-                                    </select>
-                                
-                                    <form method="POST" id="deleteForm_<?= $p['id'] ?>" class="m-0"
-                                        onsubmit="event.preventDefault(); customConfirm('¿Eliminar pedido y archivos?', () => { document.getElementById('deleteForm_<?= $p['id'] ?>').submit(); });">
-                                        <input type="hidden" name="delete_pedido" value="1">
-                                        <input type="hidden" name="pedido_id" value="<?= $p['id'] ?>">
-                                        <button type="submit" class="btn-delete" title="Eliminar pedido">🗑️</button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="status-badge status-<?= $estadoClass ?>" id="badge-<?= $p['id'] ?>">
+                                <?= htmlspecialchars($p['estado_pago']) ?>
+                            </span>
+                        </td>
+                        <td>
+                            <button type="button" class="btn-primary"
+                                onclick="openModal('<?= htmlspecialchars($p['id_orden']) ?>')">
+                                Ver Archivos
+                            </button>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <select class="form-select status-select" data-id="<?= $p['id'] ?>">
+                                    <option value="pendiente" <?= $estadoClass == 'pendiente' ? 'selected' : '' ?>>Pendiente
+                                    </option>
+                                    <option value="impreso" <?= $estadoClass == 'impreso' ? 'selected' : '' ?>>Impreso</option>
+                                    <option value="empaquetado" <?= $estadoClass == 'empaquetado' ? 'selected' : '' ?>>
+                                        Empaquetado</option>
+                                    <option value="entregado" <?= $estadoClass == 'entregado' ? 'selected' : '' ?>>Entregado
+                                    </option>
+                                </select>
+
+                                <form method="POST" id="deleteForm_<?= $p['id'] ?>" class="m-0"
+                                    onsubmit="event.preventDefault(); customConfirm('¿Eliminar pedido y archivos?', () => { document.getElementById('deleteForm_<?= $p['id'] ?>').submit(); });">
+                                    <input type="hidden" name="delete_pedido" value="1">
+                                    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                    <input type="hidden" name="pedido_id" value="<?= $p['id'] ?>">
+                                    <button type="submit" class="btn-delete" title="Eliminar pedido">🗑️</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
@@ -281,7 +307,8 @@ foreach ($pedidos as $p) {
             <h3>Confirmar</h3>
             <p id="customConfirmMsg"></p>
             <div class="confirm-actions">
-                <button type="button" class="btn-cancel" onclick="document.getElementById('customConfirm').style.display='none'">Cancelar</button>
+                <button type="button" class="btn-cancel"
+                    onclick="document.getElementById('customConfirm').style.display='none'">Cancelar</button>
                 <button type="button" id="customConfirmOk" class="btn-confirm">Confirmar</button>
             </div>
         </div>
@@ -291,27 +318,33 @@ foreach ($pedidos as $p) {
         <div class="modal-content" style="max-width: 400px;">
             <div class="modal-header">
                 <h2>Configurar Precios ($)</h2>
-                <span class="close" onclick="document.getElementById('preciosModal').style.display='none'">&times;</span>
+                <span class="close"
+                    onclick="document.getElementById('preciosModal').style.display='none'">&times;</span>
             </div>
             <div class="modal-body">
                 <form method="POST">
                     <input type="hidden" name="save_precios" value="1">
-                    
+                    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+
                     <div style="margin-bottom: 15px;">
                         <label style="display:block; margin-bottom: 5px; font-weight: 600;">Cámara 18 fotos</label>
-                        <input type="number" name="precio_18" value="<?= (int)($preciosData['18'] ?? 50000) ?>" required class="form-select" style="width:100%; padding:10px;">
+                        <input type="number" name="precio_18" value="<?= (int) ($preciosData['18'] ?? 50000) ?>"
+                            required class="form-select" style="width:100%; padding:10px;">
                     </div>
                     <div style="margin-bottom: 15px;">
                         <label style="display:block; margin-bottom: 5px; font-weight: 600;">Cámara 24 fotos</label>
-                        <input type="number" name="precio_24" value="<?= (int)($preciosData['24'] ?? 55000) ?>" required class="form-select" style="width:100%; padding:10px;">
+                        <input type="number" name="precio_24" value="<?= (int) ($preciosData['24'] ?? 55000) ?>"
+                            required class="form-select" style="width:100%; padding:10px;">
                     </div>
                     <div style="margin-bottom: 15px;">
                         <label style="display:block; margin-bottom: 5px; font-weight: 600;">Cámara 36 fotos</label>
-                        <input type="number" name="precio_36" value="<?= (int)($preciosData['36'] ?? 65000) ?>" required class="form-select" style="width:100%; padding:10px;">
+                        <input type="number" name="precio_36" value="<?= (int) ($preciosData['36'] ?? 65000) ?>"
+                            required class="form-select" style="width:100%; padding:10px;">
                     </div>
                     <div style="margin-bottom: 25px;">
                         <label style="display:block; margin-bottom: 5px; font-weight: 600;">Diseño Personalizado</label>
-                        <input type="number" name="precio_diseno" value="<?= (int)($preciosData['diseno'] ?? 45000) ?>" required class="form-select" style="width:100%; padding:10px;">
+                        <input type="number" name="precio_diseno" value="<?= (int) ($preciosData['diseno'] ?? 45000) ?>"
+                            required class="form-select" style="width:100%; padding:10px;">
                     </div>
                     <button type="submit" class="btn-primary" style="width:100%;">Guardar Precios</button>
                 </form>
@@ -325,7 +358,7 @@ foreach ($pedidos as $p) {
         const PEDIDOS_ARCHIVOS = <?= json_encode($pedidos_js) ?>;
 
         // Búsqueda
-        document.getElementById('searchInput').addEventListener('input', function(e) {
+        document.getElementById('searchInput').addEventListener('input', function (e) {
             const term = e.target.value.toLowerCase();
             document.querySelectorAll('.pedido-row').forEach(row => {
                 const matchSearch = row.dataset.search.includes(term);
@@ -337,13 +370,13 @@ foreach ($pedidos as $p) {
 
         // Filtros por Tabs
         document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
-                
+
                 const filter = this.dataset.filter;
                 const term = document.getElementById('searchInput').value.toLowerCase();
-                
+
                 document.querySelectorAll('.pedido-row').forEach(row => {
                     const matchSearch = row.dataset.search.includes(term);
                     const matchFilter = filter === 'all' || row.dataset.estado === filter;
@@ -354,11 +387,11 @@ foreach ($pedidos as $p) {
 
         // Actualización AJAX
         document.querySelectorAll('.status-select').forEach(select => {
-            select.addEventListener('change', async function() {
+            select.addEventListener('change', async function () {
                 const pedidoId = this.dataset.id;
                 const nuevoEstado = this.value;
                 const formData = new FormData();
-                
+
                 formData.append('ajax_update_status', '1');
                 formData.append('pedido_id', pedidoId);
                 formData.append('nuevo_estado', nuevoEstado);
@@ -366,17 +399,17 @@ foreach ($pedidos as $p) {
                 try {
                     const res = await fetch('admin.php', { method: 'POST', body: formData });
                     const data = await res.json();
-                    
+
                     if (data.success) {
                         const badge = document.getElementById(`badge-${pedidoId}`);
                         const row = badge.closest('.pedido-row');
-                        
+
                         badge.className = `status-badge status-${nuevoEstado}`;
                         badge.innerText = select.options[select.selectedIndex].text;
                         row.dataset.estado = nuevoEstado;
-                        
+
                         showToast();
-                        document.querySelector('.tab-btn.active').click(); 
+                        document.querySelector('.tab-btn.active').click();
                     }
                 } catch (err) {
                     alert("Error al actualizar estado");
@@ -436,7 +469,7 @@ foreach ($pedidos as $p) {
 
         function closeModal() { document.getElementById('fileModal').style.display = 'none'; }
         window.onclick = e => { if (e.target.classList.contains('modal')) closeModal(); }
-        document.addEventListener('keydown', e => { if (e.key === "Escape") { closeModal(); document.getElementById('customConfirm').style.display = 'none'; }});
+        document.addEventListener('keydown', e => { if (e.key === "Escape") { closeModal(); document.getElementById('customConfirm').style.display = 'none'; } });
 
         function customConfirm(msg, onConfirm) {
             const modal = document.getElementById('customConfirm');
@@ -448,7 +481,7 @@ foreach ($pedidos as $p) {
         // Theme Toggle Logic
         const themeToggle = document.getElementById('themeToggle');
         const themeIcon = document.getElementById('themeIcon');
-        
+
         function updateThemeIcon() {
             themeIcon.innerText = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';
         }
@@ -467,4 +500,5 @@ foreach ($pedidos as $p) {
         });
     </script>
 </body>
+
 </html>
