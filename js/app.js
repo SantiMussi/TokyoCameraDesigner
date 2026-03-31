@@ -426,9 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return dataUrl;
         };
 
-        // Función para remover el borde blanco externo (Chroma Key inteligente)
-        // Solo remueve el blanco que esté conectado a los bordes, protegiendo el interior.
-        // Función para remover el borde blanco externo (Chroma Key inteligente optimizado)
+        // Función Chroma Key optimizada para remover recuadro blanco
         const removeWhiteBorder = (img) => {
             if (!img) return null;
             const canvas = document.createElement('canvas');
@@ -442,11 +440,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const imageData = ctx.getImageData(0, 0, w, h);
             const data = imageData.data;
             const visited = new Uint8Array(w * h);
-
-            // Pila plana para mayor rendimiento (evita colapsar la memoria del navegador)
             const stack = [];
 
-            // Añadir todos los píxeles de los bordes externos a la pila inicial
+            // Iniciar la búsqueda desde todos los bordes del canvas
             for (let x = 0; x < w; x++) { stack.push(x, 0); stack.push(x, h - 1); }
             for (let y = 0; y < h; y++) { stack.push(0, y); stack.push(w - 1, y); }
 
@@ -461,13 +457,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 visited[idx] = 1;
 
                 const p = idx * 4;
+                const r = data[p];
+                const g = data[p + 1];
+                const b = data[p + 2];
+                const a = data[p + 3];
 
-                // Si el píxel es claro (blanco o gris del borde de suavizado) y no es transparente
-                // Usamos > 180 para comernos ese bordecito blanco difuminado sin tocar la cámara
-                if (data[p + 3] > 0 && data[p] > 180 && data[p + 1] > 180 && data[p + 2] > 180) {
+                // Avanzamos si es un padding transparente (a < 255) o si es el recuadro blanco (r,g,b > 180)
+                if (a < 255 || (r > 180 && g > 180 && b > 180)) {
                     data[p + 3] = 0; // Lo volvemos 100% transparente
 
-                    // Revisar los 4 vecinos
+                    // Propagar a los 4 vecinos hacia adentro
                     stack.push(x + 1, y);
                     stack.push(x - 1, y);
                     stack.push(x, y + 1);
@@ -479,7 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return canvas;
         };
 
-        // Generar Mockup combinado
+        // Generar Mockup combinado usando tokyomockupbg.jpg como fondo real
         const generateCombinedMockup = async (frenteB64, dorsoB64) => {
             const c = document.createElement('canvas');
             c.width = 1200;
@@ -498,7 +497,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const backgroundImg = await loadImg('/Fotos/tokyomockupbg.jpg');
 
             if (backgroundImg) {
-                // Dibujar fondo estilo CSS "object-fit: cover" para que no se deforme
                 const canvasRatio = c.width / c.height;
                 const imgRatio = backgroundImg.width / backgroundImg.height;
                 let drawW = c.width;
@@ -519,11 +517,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.fillRect(0, 0, c.width, c.height);
             }
 
-            // 2. Cargar frentes y dorsos diseñados
+            // 2. Cargar frentes y dorsos exportados
             let fImg = await loadImg(frenteB64);
             let dImg = await loadImg(dorsoB64);
 
-            // MAGIA: Aplicar el filtro para remover el borde blanco de las cámaras
+            // MAGIA: Aplicar el filtro para remover el borde blanco y padding de las cámaras
             if (fImg) fImg = removeWhiteBorder(fImg);
             if (dImg) dImg = removeWhiteBorder(dImg);
 
