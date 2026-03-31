@@ -43,10 +43,21 @@ function saveBase64Image($base64String, $outputFile)
 {
     if (!$base64String)
         return false;
+
+    // Tarea de seguridad: Verificación estricta de MIME type
+    if (strpos($base64String, 'data:image/png') !== 0 && 
+        strpos($base64String, 'data:image/jpeg') !== 0 && 
+        strpos($base64String, 'data:image/jpg') !== 0) {
+        http_response_code(403);
+        echo json_encode(["success" => false, "error" => "Violación de seguridad: MIME type no está permitido. Sólo PNG o JPEG."]);
+        exit;
+    }
+
     $parts = explode(',', $base64String);
     $data = isset($parts[1]) ? base64_decode($parts[1]) : base64_decode($parts[0]);
     if (!$data)
         return false;
+
     file_put_contents($outputFile, $data);
     return true;
 }
