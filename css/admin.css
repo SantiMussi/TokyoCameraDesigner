@@ -3,8 +3,19 @@
     --primary-hover: #e8659d;
     --bg: #f8f9fa;
     --text: #2d3748;
+    --text-muted: #718096;
     --card-bg: #ffffff;
     --border: #e2e8f0;
+    --hover-bg: #fcfcfc;
+}
+
+[data-theme="dark"] {
+    --bg: #0f172a;
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+    --card-bg: #1e293b;
+    --border: #334155;
+    --hover-bg: #273548;
 }
 
 body {
@@ -22,7 +33,7 @@ body {
 }
 
 .text-muted {
-    color: #718096;
+    color: var(--text-muted);
 }
 
 .text-sm {
@@ -74,7 +85,7 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
     font-size: 12px;
-    color: #718096;
+    color: var(--text-muted);
 }
 
 /* Header */
@@ -132,7 +143,7 @@ h1 {
 .card h3 {
     margin: 0 0 10px 0;
     font-size: 13px;
-    color: #718096;
+    color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -198,7 +209,7 @@ h1 {
     padding: 8px 16px;
     border: none;
     background: transparent;
-    color: #718096;
+    color: var(--text-muted);
     font-weight: 600;
     cursor: pointer;
     border-radius: 6px;
@@ -239,15 +250,15 @@ h1 {
 
 .admin-table th {
     font-weight: 600;
-    color: #718096;
+    color: var(--text-muted);
     font-size: 13px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    background: #fdfdfd;
+    background: var(--bg);
 }
 
 .admin-table tbody tr:hover {
-    background: #fcfcfc;
+    background: var(--hover-bg);
 }
 
 .admin-table tbody tr:last-child td {
@@ -336,7 +347,7 @@ h1 {
     outline: none;
     font-family: inherit;
     color: var(--text);
-    background: #fff;
+    background: var(--card-bg);
     cursor: pointer;
 }
 
@@ -379,7 +390,7 @@ h1 {
 }
 
 .modal-content {
-    background: #ffffff;
+    background: var(--card-bg);
     margin: 4% auto;
     border-radius: 16px;
     width: 90%;
@@ -409,7 +420,7 @@ h1 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #fafafa;
+    background: var(--bg);
 }
 
 .modal-header h2 {
@@ -438,7 +449,7 @@ h1 {
     display: flex;
     align-items: center;
     gap: 24px;
-    background: #f8f9fa;
+    background: var(--bg);
     padding: 24px;
     border-radius: 12px;
     border: 1px solid var(--border);
@@ -456,7 +467,7 @@ h1 {
 .mockup-img-wrapper {
     width: 200px;
     height: 200px;
-    background: #fff;
+    background: var(--card-bg);
     border-radius: 8px;
     border: 1px solid var(--border);
     display: flex;
@@ -483,7 +494,7 @@ h1 {
     border-radius: 12px;
     padding: 20px;
     text-align: center;
-    background: #fff;
+    background: var(--card-bg);
 }
 
 .print-card h3 {
@@ -497,7 +508,7 @@ h1 {
     object-fit: contain;
     margin-bottom: 16px;
     border-radius: 8px;
-    background: #f8f9fa;
+    background: var(--bg);
 }
 
 .originals-section {
@@ -523,7 +534,7 @@ h1 {
     border-radius: 10px;
     padding: 10px;
     text-align: center;
-    background: #fff;
+    background: var(--card-bg);
     display: flex;
     flex-direction: column;
 }
@@ -534,7 +545,7 @@ h1 {
     object-fit: cover;
     border-radius: 6px;
     margin-bottom: 12px;
-    background: #f8f9fa;
+    background: var(--bg);
 }
 
 .original-item .btn-download {
@@ -542,10 +553,10 @@ h1 {
 }
 
 .empty-warning {
-    color: #718096;
+    color: var(--text-muted);
     font-style: italic;
     padding: 20px;
-    background: #f8f9fa;
+    background: var(--bg);
     border-radius: 8px;
     text-align: center;
     grid-column: 1 / -1;
@@ -567,7 +578,7 @@ h1 {
 }
 
 .confirm-box {
-    background: white;
+    background: var(--card-bg);
     padding: 30px;
     border-radius: 16px;
     width: 90%;
@@ -589,7 +600,7 @@ h1 {
 
 .confirm-box p {
     margin: 0 0 20px 0;
-    color: #666;
+    color: var(--text-muted);
     font-size: 15px;
 }
 
@@ -600,8 +611,8 @@ h1 {
 
 .btn-cancel {
     flex: 1;
-    background: #f1f1f1;
-    color: #555;
+    background: var(--bg);
+    color: var(--text);
     border: none;
     padding: 10px;
     border-radius: 8px;
