@@ -543,7 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const centerX = (c.width - targetW) / 2;
 
             const frenteY = c.height * 0.143; // 14.3% del alto del lienzo
-            const dorsoY = c.height * 0.531;  // 53.1% del alto del lienzo 
+            const dorsoY = c.height * 0.47;  // 53.1% del alto del lienzo 
 
             // 5. Sombra paralela escalada dinámicamente según la resolución
             ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
