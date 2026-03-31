@@ -43,6 +43,26 @@ if (isset($_POST['delete_pedido'])) {
     exit;
 }
 
+if (isset($_POST['save_precios'])) {
+    $nuevos = [
+        "18" => (int)$_POST['precio_18'],
+        "24" => (int)$_POST['precio_24'],
+        "36" => (int)$_POST['precio_36'],
+        "diseno" => (int)$_POST['precio_diseno']
+    ];
+    file_put_contents('precios.json', json_encode($nuevos, JSON_PRETTY_PRINT));
+    header("Location: admin.php?updated=precios");
+    exit;
+}
+
+$preciosData = [];
+if (file_exists('precios.json')) {
+    $preciosData = json_decode(file_get_contents('precios.json'), true);
+}
+if (!$preciosData) {
+    $preciosData = ["18" => 50000, "24" => 55000, "36" => 65000, "diseno" => 45000];
+}
+
 $pedidos = $pdo->query("SELECT * FROM pedidos ORDER BY fecha DESC")->fetchAll();
 
 $pedidos_js = [];
@@ -90,6 +110,9 @@ foreach ($pedidos as $p) {
     <header>
         <h1>Panel de Administración Tokyo Shop</h1>
         <div style="display:flex; align-items:center; gap:15px;">
+            <button onclick="document.getElementById('preciosModal').style.display='block'" class="btn-primary" style="margin-right: 10px; padding: 6px 12px;">
+                ⚙️ Precios
+            </button>
             <button id="themeToggle" style="background:transparent; border:none; cursor:pointer; font-size:20px; outline:none; transition:0.2s;" title="Alternar Modo">
                 <span id="themeIcon">🌙</span>
             </button>
@@ -172,10 +195,9 @@ foreach ($pedidos as $p) {
                                 <?php
                                     $storage = $p['storage'];
                                     $qty = isset($p['cantidad']) ? (int)$p['cantidad'] : 1;
-                                    $basePrices = ['18' => 50000, '24' => 55000, '36' => 65000];
-                                    $priceUnit = isset($basePrices[$storage]) ? $basePrices[$storage] : 50000;
+                                    $priceUnit = isset($preciosData[$storage]) ? $preciosData[$storage] : 50000;
                                     $totalCam = $priceUnit * $qty;
-                                    $designCost = ($qty >= 10) ? 0 : 45000;
+                                    $designCost = ($qty >= 10) ? 0 : $preciosData['diseno'];
                                     $totalOrder = $totalCam + $designCost;
                                 ?>
                                 <div style="margin-top: 5px;">
@@ -261,6 +283,38 @@ foreach ($pedidos as $p) {
             <div class="confirm-actions">
                 <button type="button" class="btn-cancel" onclick="document.getElementById('customConfirm').style.display='none'">Cancelar</button>
                 <button type="button" id="customConfirmOk" class="btn-confirm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="preciosModal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Configurar Precios ($)</h2>
+                <span class="close" onclick="document.getElementById('preciosModal').style.display='none'">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form method="POST">
+                    <input type="hidden" name="save_precios" value="1">
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display:block; margin-bottom: 5px; font-weight: 600;">Cámara 18 fotos</label>
+                        <input type="number" name="precio_18" value="<?= htmlspecialchars($preciosData['18']) ?>" required class="form-select" style="width:100%; padding:10px;">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display:block; margin-bottom: 5px; font-weight: 600;">Cámara 24 fotos</label>
+                        <input type="number" name="precio_24" value="<?= htmlspecialchars($preciosData['24']) ?>" required class="form-select" style="width:100%; padding:10px;">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display:block; margin-bottom: 5px; font-weight: 600;">Cámara 36 fotos</label>
+                        <input type="number" name="precio_36" value="<?= htmlspecialchars($preciosData['36']) ?>" required class="form-select" style="width:100%; padding:10px;">
+                    </div>
+                    <div style="margin-bottom: 25px;">
+                        <label style="display:block; margin-bottom: 5px; font-weight: 600;">Diseño Personalizado</label>
+                        <input type="number" name="precio_diseno" value="<?= htmlspecialchars($preciosData['diseno']) ?>" required class="form-select" style="width:100%; padding:10px;">
+                    </div>
+                    <button type="submit" class="btn-primary" style="width:100%;">Guardar Precios</button>
+                </form>
             </div>
         </div>
     </div>

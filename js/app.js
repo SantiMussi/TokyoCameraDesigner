@@ -30,18 +30,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnPlus = document.getElementById('btnPlus');
     const qtyDisplay = document.getElementById('qtyDisplay');
 
+    let basePrices = {
+        '18': 50000,
+        '24': 55000,
+        '36': 65000
+    };
+    let disenoPrice = 45000;
+
+    fetch('precios.json?nocache=' + new Date().getTime())
+        .then(res => res.json())
+        .then(data => {
+            if(data) {
+                basePrices['18'] = data['18'] || 50000;
+                basePrices['24'] = data['24'] || 55000;
+                basePrices['36'] = data['36'] || 65000;
+                disenoPrice = data['diseno'] !== undefined ? data['diseno'] : 45000;
+                updateOrderSummary();
+            }
+        })
+        .catch(err => console.error("Error al cargar precios:", err));
+
     function updateOrderSummary() {
-        const basePrices = {
-            '18': 50000,
-            '24': 55000,
-            '36': 65000
-        };
         const qty = state.quantity || 1;
         const storageVal = state.storage;
-        const camPriceUnit = basePrices[storageVal] || 50000;
+        const camPriceUnit = basePrices[storageVal] || basePrices['18'];
         const totalCamPrice = camPriceUnit * qty;
         
-        let designPrice = 45000;
+        let designPrice = disenoPrice;
         if (qty >= 10) { designPrice = 0; }
 
         const totalFinal = totalCamPrice + designPrice;
