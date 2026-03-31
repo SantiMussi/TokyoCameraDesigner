@@ -99,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateOrderSummary();
 
+    // Mapas de Plantillas (Capas de superposición y siluetas de fondo)
     const templates = {
         'V1-FRENTE': 'Fotos/DESCARTABLEV1FRENTE.png',
         'V1-DORSO': 'Fotos/DESCARTABLEV1DORSO.png',
@@ -106,19 +107,28 @@ document.addEventListener('DOMContentLoaded', () => {
         'V2-DORSO': 'Fotos/DESCARTABLEV2DORSO.png'
     };
 
+    const siluetas = {
+        'V1-FRENTE': 'Fotos/SILUETAV1FRENTE.png',
+        'V1-DORSO': 'Fotos/SILUETAV1DORSO.png',
+        'V2-FRENTE': 'Fotos/SILUETAV2FRENTE.png',
+        'V2-DORSO': 'Fotos/SILUETAV2DORSO.png'
+    };
+
     const savedDesigns = {};
     let currentClipPath = null;
 
-    // 3. Carga de Plantilla (Overlay)
+    // 3. Carga de Plantilla (SISTEMA DE 3 CAPAS)
     function loadTemplate(callback) {
         const key = `${state.model}-${state.face}`;
         const imgUrl = templates[key];
+        const siluetaUrl = siluetas[key];
 
         if (!imgUrl) {
             if (callback) callback();
             return;
         }
 
+        // Cargar Overlay (Marco de la cámara por delante)
         fabric.Image.fromURL(imgUrl, (img) => {
             if (!img) {
                 if (callback) callback();
@@ -134,7 +144,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 evented: false, selectable: false
             });
 
+            // Establecer como capa superior (Overlay)
             canvas.setOverlayImage(img, canvas.renderAll.bind(canvas));
+
+            // Cargar Silueta (Fondo blanco de la cámara por detrás)
+            if (siluetaUrl) {
+                fabric.Image.fromURL(siluetaUrl, (silImg) => {
+                    if (silImg) {
+                        silImg.set({
+                            originX: 'center', originY: 'center',
+                            left: CANVAS_WIDTH / 2, top: CANVAS_HEIGHT / 2,
+                            scaleX: scale, scaleY: scale,
+                            evented: false, selectable: false
+                        });
+                        // Establecer como capa inferior (Background)
+                        canvas.setBackgroundImage(silImg, canvas.renderAll.bind(canvas));
+                    }
+                });
+            } else {
+                canvas.setBackgroundImage(null, canvas.renderAll.bind(canvas));
+            }
 
             currentClipPath = new fabric.Rect({
                 left: CANVAS_WIDTH / 2, top: CANVAS_HEIGHT / 2,
@@ -211,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.onload = function (f) {
             const tempImg = new Image();
             tempImg.onload = function () {
-                if (tempImg.width < 1000 || tempImg.height < 1000) {
+                if (tempImg.width < 1500 || tempImg.height < 1500) {
                     showToast("⚠️ Esta imagen tiene baja resolución. Podría salir pixelada al imprimir.");
                 }
                 fabric.Image.fromURL(f.target.result, (img) => {
@@ -330,7 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
         customConfirm('¿Estás seguro de que deseas limpiar el diseño actual?', () => {
             const objects = canvas.getObjects();
             objects.forEach(obj => {
-                if (obj !== canvas.overlayImage && obj.type !== 'rect') {
+                if (obj !== canvas.overlayImage && obj !== canvas.backgroundImage && obj.type !== 'rect') {
                     canvas.remove(obj);
                 }
             });
@@ -360,7 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Revisar canvas actual
         canvas.getObjects().forEach(obj => {
-            if (obj.type === 'image') hasImages = true;
+            if (obj.type === 'image' && obj !== canvas.overlayImage && obj !== canvas.backgroundImage) hasImages = true;
         });
 
         // Revisar diseños guardados (otras vistas)
@@ -401,24 +430,30 @@ document.addEventListener('DOMContentLoaded', () => {
         const loader = document.getElementById('loadingOverlay');
         if (loader) loader.style.display = 'flex';
 
-        // Exportar cara limpia para impresión
+        // Exportar cara limpia para impresión (Ocultamos overlay y silhouette para dejar solo el diseño)
         const exportCleanCanvasBase64 = () => {
-            const tempBg = canvas.backgroundColor;
+            const tempBgColor = canvas.backgroundColor;
+            const tempBgImg = canvas.backgroundImage;
             const tempOverlay = canvas.overlayImage;
+
             canvas.backgroundColor = null;
+            canvas.backgroundImage = null;
             canvas.overlayImage = null;
+
             canvas.renderAll();
             const dataUrl = canvas.toDataURL({ format: 'png', multiplier: 4 });
-            canvas.backgroundColor = tempBg;
+
+            canvas.backgroundColor = tempBgColor;
+            canvas.backgroundImage = tempBgImg;
             canvas.overlayImage = tempOverlay;
             canvas.renderAll();
             return dataUrl;
         };
 
-        // Exportar cara con cámara para Mockup
+        // Exportar cara con cámara COMPLETA (Silueta + Diseño + Marco) para el Mockup
         const exportMockupCanvasBase64 = () => {
             const tempBg = canvas.backgroundColor;
-            canvas.backgroundColor = null;
+            canvas.backgroundColor = null; // Volvemos el fondo del canvas transparente
             canvas.renderAll();
             const dataUrl = canvas.toDataURL({ format: 'png', multiplier: 2 });
             canvas.backgroundColor = tempBg;
@@ -426,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return dataUrl;
         };
 
-        // Función Chroma Key ultra-estricta
+        // Función Chroma Key ultra-estricta (A pedido del usuario: Mantenido por seguridad extra)
         const removeWhiteBorder = (img) => {
             if (!img) return null;
             const canvas = document.createElement('canvas');
@@ -462,8 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const b = data[p + 2];
                 const a = data[p + 3];
 
-                // FIX ESTRICTO (>= 245): Solo borra el BLANCO PURO del marco de tu plantilla. 
-                // Frenará de golpe apenas toque el amarillo u otro color del diseño, protegiendo todo el interior.
+                // FIX ESTRICTO (>= 245): Solo borra el BLANCO PURO de los márgenes
                 if (a < 255 || (r >= 245 && g >= 245 && b >= 245)) {
                     data[p + 3] = 0; // Lo volvemos 100% transparente
 
@@ -479,7 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return canvas;
         };
 
-        // Generar Mockup combinado adaptativo (Resolución HD)
+        // Generar Mockup Final Limpio (Las capas se encargan de los huecos)
         const generateCombinedMockup = async (frenteB64, dorsoB64) => {
             const loadImg = (src) => new Promise(res => {
                 if (!src) return res(null);
@@ -489,12 +523,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 img.src = src;
             });
 
-            // 1. Cargar el fondo PRIMERO para saber su resolución real
+            // 1. Cargar el fondo
             const backgroundImg = await loadImg('/Fotos/tokyomockupbg.jpg');
 
             const c = document.createElement('canvas');
 
-            // Usar la resolución nativa y exacta de la imagen de fondo, o 1200x1600 por defecto
             if (backgroundImg) {
                 c.width = backgroundImg.width;
                 c.height = backgroundImg.height;
@@ -504,8 +537,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const ctx = c.getContext('2d');
-
-            // Forzar renderizado de Alta Calidad para que las cámaras no se pixelen al agrandarse
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
 
@@ -530,35 +561,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.fillRect(0, 0, c.width, c.height);
             }
 
-            // 2. Cargar frentes y dorsos exportados
+            // 2. Cargar frentes y dorsos exportados (Ya vienen armados en sándwich desde Fabric)
             let fImg = await loadImg(frenteB64);
             let dImg = await loadImg(dorsoB64);
 
-            // 3. Aplicar el filtro quirúrgico para remover el borde blanco
+            // 3. Aplicar el filtro estricto por las dudas
             if (fImg) fImg = removeWhiteBorder(fImg);
             if (dImg) dImg = removeWhiteBorder(dImg);
 
-            // 4. Calcular proporciones matemáticas relativas al fondo
-            const targetW = c.width * 0.816; // 81.6% del ancho del lienzo 
+            // 4. Calcular proporciones relativas al fondo
+            const targetW = c.width * 0.816;
             const centerX = (c.width - targetW) / 2;
 
-            const frenteY = c.height * 0.143; // 14.3% del alto del lienzo
-            const dorsoY = c.height * 0.47;  // 53.1% del alto del lienzo 
+            const frenteY = c.height * 0.143;
+            const dorsoY = c.height * 0.47;
 
-            // 5. Sombra paralela escalada dinámicamente según la resolución
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-            ctx.shadowBlur = c.width * 0.033;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = c.height * 0.015;
+            const setupShadow = () => {
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+                ctx.shadowBlur = c.width * 0.033;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = c.height * 0.015;
+            };
 
-            // 6. Superponer las cámaras
+            // 5. Superponer las cámaras
             if (fImg) {
                 let scale = targetW / fImg.width;
-                ctx.drawImage(fImg, centerX, frenteY, targetW, fImg.height * scale);
+                let h = fImg.height * scale;
+                setupShadow();
+                ctx.drawImage(fImg, centerX, frenteY, targetW, h);
             }
             if (dImg) {
                 let scale = targetW / dImg.width;
-                ctx.drawImage(dImg, centerX, dorsoY, targetW, dImg.height * scale);
+                let h = dImg.height * scale;
+                setupShadow();
+                ctx.drawImage(dImg, centerX, dorsoY, targetW, h);
             }
 
             ctx.shadowColor = 'transparent';
@@ -611,7 +647,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Capturar imágenes originales individuales
         const usedImages = [];
         [activeKey, otherKey].forEach(k => {
-            (savedDesigns[k] || []).forEach(o => { if (o.type === 'image') usedImages.push(o.src); });
+            (savedDesigns[k] || []).forEach(o => { if (o.type === 'image' && o.src && !o.src.includes('SILUETA') && !o.src.includes('DESCARTABLE')) usedImages.push(o.src); });
         });
 
         const payload = {
