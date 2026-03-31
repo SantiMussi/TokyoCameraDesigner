@@ -7,7 +7,16 @@ require_once 'db.php';
 header('Content-Type: application/json');
 
 // Leer JSON enviado por Fetch
-$data = json_decode(file_get_contents('php://input'), true);
+$raw_data = file_get_contents('php://input');
+
+// PROTECCIÓN DoS 1: Limitar el tamaño del payload a ~25 MB (suficiente para las fotos de un pedido normal)
+if (strlen($raw_data) > 25 * 1024 * 1024) {
+    http_response_code(413); // 413 Payload Too Large
+    echo json_encode(["success" => false, "error" => "Violación de seguridad: El tamaño del pedido excede el límite permitido."]);
+    exit;
+}
+
+$data = json_decode($raw_data, true);
 
 if (!$data) {
     echo json_encode(["success" => false, "error" => "No se recibieron datos JSON válidos."]);
@@ -26,6 +35,13 @@ $cantidad = isset($data['cantidad']) ? (int) $data['cantidad'] : 1;
 $mockup = isset($data['mockup']) ? $data['mockup'] : null;
 $imagenes_utilizadas = isset($data['imagenes_utilizadas']) ? $data['imagenes_utilizadas'] : [];
 
+// PROTECCIÓN DoS 3: Limitar la cantidad de imágenes enviadas
+if (is_array($imagenes_utilizadas) && count($imagenes_utilizadas) > 50) {
+    http_response_code(400);
+    echo json_encode(["success" => false, "error" => "Se superó el límite máximo de imágenes por pedido."]);
+    exit;
+}
+
 // Directorios
 $pedidos_dir = __DIR__ . '/pedidos/';
 $id_orden = time() . '_' . rand(1000, 9999);
@@ -43,6 +59,11 @@ function saveBase64Image($base64String, $outputFile)
 {
     if (!$base64String)
         return false;
+
+    // PROTECCIÓN DoS 2: Límite individual de ~10MB en base64 por imagen
+    if (strlen($base64String) > 10 * 1024 * 1024) {
+        return false;
+    }
 
     // Tarea de seguridad: Verificación estricta de MIME type
     if (
@@ -63,7 +84,6 @@ function saveBase64Image($base64String, $outputFile)
     file_put_contents($outputFile, $data);
     return true;
 }
-
 $path_frente = $orden_dir . 'frente.png';
 $path_dorso = $orden_dir . 'dorso.png';
 $path_mockup = $orden_dir . 'mockup.png';
