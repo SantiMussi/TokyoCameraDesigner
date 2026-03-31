@@ -573,8 +573,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const targetW = c.width * 0.816;
             const centerX = (c.width - targetW) / 2;
 
-            const frenteY = c.height * 0.147;
-            const dorsoY = c.height * 0.427;
+            const frenteY = c.height * 0.141;
+            const dorsoY = c.height * 0.422;
 
             const setupShadow = () => {
                 ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
