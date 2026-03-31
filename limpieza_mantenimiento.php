@@ -8,6 +8,18 @@ Script de Mantenimiento de Limpieza (Cron/Manual)
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
+// --- PROTECCIÓN DE SEGURIDAD ---
+$is_cli = (php_sapi_name() === 'cli');
+$cron_token = 'TOKYO_CLEAN_2026'; // Token secreto para Cron Jobs por URL
+$token_enviado = isset($_GET['token']) ? $_GET['token'] : '';
+
+// Si no es CLI y el token por URL no coincide, verificamos autenticación de Admin
+if (!$is_cli && $token_enviado !== $cron_token) {
+    require_once 'admin_auth.php';
+    check_login();
+}
+// -------------------------------
+
 // Configuración
 $dias_limite = 30; // Eliminar carpetas que tengan más de X días de antigüedad
 $directorio_pedidos = __DIR__ . '/pedidos/';
@@ -30,7 +42,7 @@ if (is_dir($directorio_pedidos)) {
 
         // Ignorar . y .. y asegurarse de que es una carpeta que empiece por 'pedido_'
         if ($elemento != "." && $elemento != ".." && is_dir($ruta_completa) && strpos($elemento, 'pedido_') === 0) {
-            
+
             // Comprobar la fecha de la última modificación (o de creación si no se modificó)
             $fecha_carpeta = filemtime($ruta_completa);
 
