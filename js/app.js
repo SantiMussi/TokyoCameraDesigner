@@ -14,18 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
         width: CANVAS_WIDTH,
         height: CANVAS_HEIGHT,
         backgroundColor: "#ffffff",
-        preserveObjectStacking: true,
-        uniformScaling: true
+        preserveObjectStacking: true
     });
-
-    // Forzar escalado proporcional en controles laterales por defecto (Shift lo invierte)
-    if (fabric.controlsUtils && fabric.controlsUtils.scalingEqually) {
-        ['ml', 'mr', 'mt', 'mb'].forEach(pos => {
-            if (fabric.Object.prototype.controls[pos]) {
-                fabric.Object.prototype.controls[pos].actionHandler = fabric.controlsUtils.scalingEqually;
-            }
-        });
-    }
 
     // 2. Estado de la Aplicación
     const state = {
@@ -176,7 +166,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         originX: 'center', originY: 'center',
                         scaleX: scale, scaleY: scale,
                         cornerColor: '#ff2a85', transparentCorners: false,
-                        clipPath: currentClipPath
+                        clipPath: currentClipPath,
+                        originalScale: scale
                     });
                     canvas.add(img);
                     canvas.setActiveObject(img);
@@ -260,6 +251,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('sendBackwardBtn')?.addEventListener('click', () => {
         const activeObj = canvas.getActiveObject();
         if (activeObj) { canvas.sendBackwards(activeObj); canvas.requestRenderAll(); }
+    });
+
+    document.getElementById('resetProportionsBtn')?.addEventListener('click', () => {
+        const activeObj = canvas.getActiveObject();
+        if (activeObj && activeObj.type === 'image') {
+            if (activeObj.originalScale) {
+                activeObj.set({ scaleX: activeObj.originalScale, scaleY: activeObj.originalScale });
+            } else {
+                activeObj.set({ scaleY: activeObj.scaleX });
+            }
+            activeObj.setCoords();
+            canvas.requestRenderAll();
+        }
     });
 
     document.getElementById('deleteObjBtn')?.addEventListener('click', () => {
