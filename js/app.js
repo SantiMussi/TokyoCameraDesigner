@@ -426,90 +426,59 @@ document.addEventListener('DOMContentLoaded', () => {
             return dataUrl;
         };
 
-        // Generar Mockup combinado en FONDO BLANCO
-        // Generar Mockup combinado estilo Tokyo Shop (Fondo rosa, estrellas, sombras 3D)
+        // Generar Mockup combinado usando tokyomockupbg.jpg como fondo real
         const generateCombinedMockup = async (frenteB64, dorsoB64) => {
             const c = document.createElement('canvas');
-            c.width = 1200; // Un poco más ancho para mejor proporción
+            c.width = 1200;
             c.height = 1600;
             const ctx = c.getContext('2d');
 
-            // 1. Fondo rosa Tokyo
-            ctx.fillStyle = '#ff7bb4';
-            ctx.fillRect(0, 0, c.width, c.height);
-
-            // 2. Función para dibujar estrellas decorativas
-            const drawStar = (cx, cy, spikes, outerRadius, innerRadius, color) => {
-                let rot = Math.PI / 2 * 3;
-                let x = cx, y = cy;
-                let step = Math.PI / spikes;
-
-                ctx.beginPath();
-                ctx.moveTo(cx, cy - outerRadius);
-                for (let i = 0; i < spikes; i++) {
-                    x = cx + Math.cos(rot) * outerRadius;
-                    y = cy + Math.sin(rot) * outerRadius;
-                    ctx.lineTo(x, y);
-                    rot += step;
-
-                    x = cx + Math.cos(rot) * innerRadius;
-                    y = cy + Math.sin(rot) * innerRadius;
-                    ctx.lineTo(x, y);
-                    rot += step;
-                }
-                ctx.lineTo(cx, cy - outerRadius);
-                ctx.closePath();
-                ctx.fillStyle = color;
-                ctx.fill();
-            };
-
-            // 3. Dibujar estrellitas amarillas por el fondo
-            const starColor = '#faff60';
-            drawStar(150, 150, 5, 30, 15, starColor);
-            drawStar(1050, 250, 5, 40, 20, starColor);
-            drawStar(100, 750, 5, 25, 12, starColor);
-            drawStar(1100, 850, 5, 35, 17, starColor);
-            drawStar(200, 1400, 5, 45, 22, starColor);
-            drawStar(950, 1500, 5, 30, 15, starColor);
-            drawStar(600, 100, 5, 25, 12, starColor);
-
-            // 4. Agregar texto "MOCK UP" estilo retro
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.font = 'bold 70px "Outfit", sans-serif';
-            ctx.textAlign = 'right';
-            ctx.fillText('MOCK UP', c.width - 80, 120);
-
-            // Cargar imágenes de la cámara
             const loadImg = (src) => new Promise(res => {
                 if (!src) return res(null);
-                const img = new Image(); img.onload = () => res(img); img.src = src;
+                const img = new Image();
+                img.onload = () => res(img);
+                img.onerror = () => res(null); // Evitar que rompa si no encuentra la imagen
+                img.src = src;
             });
 
+            // 1. Cargar el fondo (Asegurate de que esta ruta coincida con tu carpeta en el servidor)
+            const backgroundImg = await loadImg('/Fotos/tokyomockupbg.jpg');
+
+            if (backgroundImg) {
+                // Dibujar la imagen de fondo cubriendo todo el canvas
+                ctx.drawImage(backgroundImg, 0, 0, c.width, c.height);
+            } else {
+                // Color fallback por si la imagen tarda en cargar o no se encuentra
+                ctx.fillStyle = '#ff7bb4';
+                ctx.fillRect(0, 0, c.width, c.height);
+            }
+
+            // 2. Cargar frentes y dorsos diseñados
             const fImg = await loadImg(frenteB64);
             const dImg = await loadImg(dorsoB64);
 
-            const targetW = 900; // Cámaras un poco más grandes para que destaquen
+            const targetW = 900;
 
-            // 5. Configurar Sombra (Drop Shadow) para dar efecto 3D
+            // 3. Sombra paralela para separar las cámaras del fondo
             ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
             ctx.shadowBlur = 35;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 20;
 
-            // Dibujar las cámaras por encima de todo
+            // 4. Superponer las cámaras en sus respectivas coordenadas
             if (fImg) {
                 let scale = targetW / fImg.width;
-                ctx.drawImage(fImg, (c.width - targetW) / 2, 230, targetW, fImg.height * scale);
+                ctx.drawImage(fImg, 150, 230, targetW, fImg.height * scale);
             }
             if (dImg) {
                 let scale = targetW / dImg.width;
-                ctx.drawImage(dImg, (c.width - targetW) / 2, 900, targetW, dImg.height * scale);
+                ctx.drawImage(dImg, 150, 900, targetW, dImg.height * scale);
             }
 
-            // Limpiar sombras por las dudas
+            // Restaurar sombras
             ctx.shadowColor = 'transparent';
 
-            return c.toDataURL('image/jpeg', 0.9); // Pasamos a JPEG para optimizar peso
+            return c.toDataURL('image/jpeg', 0.9);
         };
 
         const activeFace = state.face;
