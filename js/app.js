@@ -426,7 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return dataUrl;
         };
 
-        // Función Chroma Key optimizada para remover recuadro blanco
+        // Función Chroma Key ultra-estricta
         const removeWhiteBorder = (img) => {
             if (!img) return null;
             const canvas = document.createElement('canvas');
@@ -462,8 +462,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const b = data[p + 2];
                 const a = data[p + 3];
 
-                // Avanzamos si es un padding transparente (a < 255) o si es el recuadro blanco (r,g,b > 180)
-                if (a < 255 || (r > 180 && g > 180 && b > 180)) {
+                // FIX ESTRICTO (>= 245): Solo borra el BLANCO PURO del marco de tu plantilla. 
+                // Frenará de golpe apenas toque el amarillo u otro color del diseño, protegiendo todo el interior.
+                if (a < 255 || (r >= 245 && g >= 245 && b >= 245)) {
                     data[p + 3] = 0; // Lo volvemos 100% transparente
 
                     // Propagar a los 4 vecinos hacia adentro
@@ -478,13 +479,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return canvas;
         };
 
-        // Generar Mockup combinado usando tokyomockupbg.jpg como fondo real
+        // Generar Mockup combinado adaptativo (Resolución HD)
         const generateCombinedMockup = async (frenteB64, dorsoB64) => {
-            const c = document.createElement('canvas');
-            c.width = 1100;
-            c.height = 1600;
-            const ctx = c.getContext('2d');
-
             const loadImg = (src) => new Promise(res => {
                 if (!src) return res(null);
                 const img = new Image();
@@ -493,8 +489,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 img.src = src;
             });
 
-            // 1. Cargar el fondo
+            // 1. Cargar el fondo PRIMERO para saber su resolución real
             const backgroundImg = await loadImg('/Fotos/tokyomockupbg.jpg');
+
+            const c = document.createElement('canvas');
+
+            // Usar la resolución nativa y exacta de la imagen de fondo, o 1200x1600 por defecto
+            if (backgroundImg) {
+                c.width = backgroundImg.width;
+                c.height = backgroundImg.height;
+            } else {
+                c.width = 1200;
+                c.height = 1600;
+            }
+
+            const ctx = c.getContext('2d');
+
+            // Forzar renderizado de Alta Calidad para que las cámaras no se pixelen al agrandarse
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
 
             if (backgroundImg) {
                 const canvasRatio = c.width / c.height;
@@ -521,30 +534,35 @@ document.addEventListener('DOMContentLoaded', () => {
             let fImg = await loadImg(frenteB64);
             let dImg = await loadImg(dorsoB64);
 
-            // MAGIA: Aplicar el filtro para remover el borde blanco y padding de las cámaras
+            // 3. Aplicar el filtro quirúrgico para remover el borde blanco
             if (fImg) fImg = removeWhiteBorder(fImg);
             if (dImg) dImg = removeWhiteBorder(dImg);
 
-            const targetW = 980;
+            // 4. Calcular proporciones matemáticas relativas al fondo
+            const targetW = c.width * 0.816; // 81.6% del ancho del lienzo 
+            const centerX = (c.width - targetW) / 2;
 
-            // 3. Sombra paralela para separar las cámaras del fondo
+            const frenteY = c.height * 0.143; // 14.3% del alto del lienzo
+            const dorsoY = c.height * 0.531;  // 53.1% del alto del lienzo 
+
+            // 5. Sombra paralela escalada dinámicamente según la resolución
             ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-            ctx.shadowBlur = 40;
+            ctx.shadowBlur = c.width * 0.033;
             ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 25;
+            ctx.shadowOffsetY = c.height * 0.015;
 
-            // 4. Superponer las cámaras
+            // 6. Superponer las cámaras
             if (fImg) {
                 let scale = targetW / fImg.width;
-                ctx.drawImage(fImg, 150, 230, targetW, fImg.height * scale);
+                ctx.drawImage(fImg, centerX, frenteY, targetW, fImg.height * scale);
             }
             if (dImg) {
                 let scale = targetW / dImg.width;
-                ctx.drawImage(dImg, 150, 840, targetW, dImg.height * scale);
+                ctx.drawImage(dImg, centerX, dorsoY, targetW, dImg.height * scale);
             }
 
             ctx.shadowColor = 'transparent';
-            return c.toDataURL('image/jpeg', 0.9);
+            return c.toDataURL('image/jpeg', 0.95);
         };
 
         const activeFace = state.face;
