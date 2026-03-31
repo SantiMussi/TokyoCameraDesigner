@@ -271,17 +271,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmOrderBtn = document.getElementById('confirmOrderBtn');
 
     finishBtn.addEventListener('click', () => {
+        let hasImages = false;
+
+        // Revisar canvas actual
+        canvas.getObjects().forEach(obj => {
+            if (obj.type === 'image') hasImages = true;
+        });
+
+        // Revisar diseños guardados (otras vistas)
+        Object.values(savedDesigns).forEach(designObjs => {
+            designObjs.forEach(obj => {
+                if (obj.type === 'image') hasImages = true;
+            });
+        });
+
+        if (!hasImages) {
+            customAlert("Por favor, subí al menos una foto al diseño para continuar.", "Diseño vacío", "📸");
+            return;
+        }
+
         checkoutModal.style.display = 'flex';
     });
 
     // 9. LÓGICA DE GUARDADO (Botón dentro del Modal)
     confirmOrderBtn.addEventListener('click', async () => {
-        const nameVal = document.getElementById('clientName').value;
-        const emailVal = document.getElementById('clientEmail').value;
-        const telVal = document.getElementById('clientWhatsapp').value;
+        const nameVal = document.getElementById('clientName').value.trim();
+        const emailVal = document.getElementById('clientEmail').value.trim();
+        const telVal = document.getElementById('clientWhatsapp').value.trim();
 
         if (!nameVal || !emailVal || !telVal) {
             customAlert("Por favor, completá todos tus datos.", "Faltan datos", "📝");
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(emailVal)) {
+            customAlert("Por favor, ingresá un correo electrónico válido.", "Email inválido", "📧");
             return;
         }
 
