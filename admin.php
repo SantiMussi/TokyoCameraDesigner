@@ -108,12 +108,19 @@ foreach ($pedidos as $p) {
     <title>Tokyo Admin | Gestión de Pedidos</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/admin.css?v=<?= time() ?>">
     <script>
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.setAttribute('data-theme', 'dark');
-        }
+        (function() {
+            try {
+                const savedTheme = localStorage.getItem('theme');
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            } catch (e) {
+                console.error('Theme logic head error', e);
+            }
+        })();
     </script>
 </head>
 
@@ -355,6 +362,39 @@ foreach ($pedidos as $p) {
     <div id="toast" class="toast">Guardado correctamente</div>
 
     <script>
+        // Theme Toggle Logic
+        (function() {
+            try {
+                const themeToggle = document.getElementById('themeToggle');
+                const themeIcon = document.getElementById('themeIcon');
+                if (!themeToggle || !themeIcon) return;
+
+                const updateThemeIcon = () => {
+                    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                    // Luna (🌙) p/ modo claro, Sol (☀️) p/ modo oscuro
+                    themeIcon.innerText = isDark ? '\u2600\uFE0F' : '\uD83C\uDF19';
+                };
+                
+                updateThemeIcon();
+
+                themeToggle.addEventListener('click', () => {
+                    const isCurrentlyDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                    if (isCurrentlyDark) {
+                        document.documentElement.removeAttribute('data-theme');
+                        localStorage.setItem('theme', 'light');
+                    } else {
+                        document.documentElement.setAttribute('data-theme', 'dark');
+                        localStorage.setItem('theme', 'dark');
+                    }
+                    updateThemeIcon();
+                });
+            } catch (e) {
+                console.error('Theme logic footer error', e);
+            }
+        })();
+    </script>
+    
+    <script>
         const PEDIDOS_ARCHIVOS = <?= json_encode($pedidos_js, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
         // Búsqueda
@@ -478,27 +518,6 @@ foreach ($pedidos as $p) {
             modal.style.display = 'flex';
             document.getElementById('customConfirmOk').onclick = () => { modal.style.display = 'none'; onConfirm(); };
         }
-
-        // Theme Toggle Logic
-        const themeToggle = document.getElementById('themeToggle');
-        const themeIcon = document.getElementById('themeIcon');
-
-        function updateThemeIcon() {
-            themeIcon.innerText = document.documentElement.getAttribute('data-theme') === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19';
-        }
-        updateThemeIcon();
-
-        themeToggle.addEventListener('click', () => {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            if (currentTheme === 'dark') {
-                document.documentElement.removeAttribute('data-theme');
-                localStorage.setItem('theme', 'light');
-            } else {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                localStorage.setItem('theme', 'dark');
-            }
-            updateThemeIcon();
-        });
     </script>
 </body>
 
