@@ -1,4 +1,8 @@
 <?php
+/* PROPIEDAD DE TOKYO SHOP - BUENOS AIRES, ARGENTINA
+Diseño y Desarrollo por Santiago M. (2026)
+Cualquier copia no autorizada será reportada.
+*/
 session_start();
 require_once 'db.php';
 

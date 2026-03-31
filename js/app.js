@@ -1,3 +1,7 @@
+/* PROPIEDAD DE TOKYO SHOP - BUENOS AIRES, ARGENTINA
+Diseño y Desarrollo por Santiago M. (2026)
+Cualquier copia no autorizada será reportada.
+*/
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Inicialización de Fabric.js Canvas
     const canvasEl = document.getElementById('cameraCanvas');
@@ -135,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const reader = new FileReader();
         reader.onload = function (f) {
             const tempImg = new Image();
-            tempImg.onload = function() {
+            tempImg.onload = function () {
                 if (tempImg.width < 1500 || tempImg.height < 1500) {
                     showToast("⚠️ Esta imagen tiene baja resolución. Podría salir pixelada al imprimir.");
                 }
@@ -162,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // -- TOAST FUNCTIONALITY --
     function showToast(message) {
         const container = document.getElementById('toastContainer');
-        if(!container) return;
+        if (!container) return;
         const toast = document.createElement('div');
         toast.style.background = '#333';
         toast.style.color = 'white';
@@ -174,14 +178,14 @@ document.addEventListener('DOMContentLoaded', () => {
         toast.style.transform = 'translateY(20px)';
         toast.style.transition = 'opacity 0.3s, transform 0.3s';
         toast.innerText = message;
-        
+
         container.appendChild(toast);
-        
+
         setTimeout(() => {
             toast.style.opacity = '1';
             toast.style.transform = 'translateY(0)';
         }, 10);
-        
+
         setTimeout(() => {
             toast.style.opacity = '0';
             toast.style.transform = 'translateY(20px)';
@@ -192,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // -- ALERT & CONFIRM MODALS --
     function customAlert(msg, title = 'Atención', icon = '⚠️') {
         const modal = document.getElementById('customAlert');
-        if(!modal) { alert(msg); return; }
+        if (!modal) { alert(msg); return; }
         document.getElementById('customAlertTitle').innerText = title;
         document.getElementById('customAlertMsg').innerText = msg;
         document.getElementById('customAlertIcon').innerText = icon;
@@ -201,26 +205,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function customConfirm(msg, onConfirm, title = 'Confirmar', icon = '❓') {
         const modal = document.getElementById('customConfirm');
-        if(!modal) { if(confirm(msg)) onConfirm(); return; }
+        if (!modal) { if (confirm(msg)) onConfirm(); return; }
         document.getElementById('customConfirmTitle').innerText = title;
         document.getElementById('customConfirmMsg').innerText = msg;
         document.getElementById('customConfirmIcon').innerText = icon;
         modal.style.display = 'flex';
-        
-        document.getElementById('customConfirmOk').onclick = function() {
+
+        document.getElementById('customConfirmOk').onclick = function () {
             modal.style.display = 'none';
             onConfirm();
         };
-        document.getElementById('customConfirmCancel').onclick = function() {
+        document.getElementById('customConfirmCancel').onclick = function () {
             modal.style.display = 'none';
         };
     }
 
     // -- CONTROLES DE CAPAS Y ELIMINACIÓN --
     const objControls = document.getElementById('objectControls');
-    canvas.on('selection:created', () => { if(objControls) objControls.style.display = 'block'; });
-    canvas.on('selection:updated', () => { if(objControls) objControls.style.display = 'block'; });
-    canvas.on('selection:cleared', () => { if(objControls) objControls.style.display = 'none'; });
+    canvas.on('selection:created', () => { if (objControls) objControls.style.display = 'block'; });
+    canvas.on('selection:updated', () => { if (objControls) objControls.style.display = 'block'; });
+    canvas.on('selection:cleared', () => { if (objControls) objControls.style.display = 'none'; });
 
     document.getElementById('bringForwardBtn')?.addEventListener('click', () => {
         const activeObj = canvas.getActiveObject();
@@ -241,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
         customConfirm('¿Estás seguro de que deseas limpiar el diseño actual?', () => {
             const objects = canvas.getObjects();
             objects.forEach(obj => {
-                if (obj !== canvas.overlayImage && obj.type !== 'rect') { 
+                if (obj !== canvas.overlayImage && obj.type !== 'rect') {
                     canvas.remove(obj);
                 }
             });
@@ -283,9 +287,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         confirmOrderBtn.innerHTML = 'Guardando pedido...';
         confirmOrderBtn.disabled = true;
-        
+
         const loader = document.getElementById('loadingOverlay');
-        if(loader) loader.style.display = 'flex';
+        if (loader) loader.style.display = 'flex';
 
         // Exportar cara limpia para impresión
         const exportCleanCanvasBase64 = () => {
@@ -398,16 +402,16 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const res = await resp.json();
             if (res.success) {
-                if(loader) loader.style.display = 'none';
+                if (loader) loader.style.display = 'none';
                 customAlert(`¡Pedido guardado exitosamente! Tu orden es: ${res.id_orden}`, "¡Éxito!", "🎉");
                 checkoutModal.style.display = 'none';
-            } else { 
-                if(loader) loader.style.display = 'none';
-                customAlert("Error: " + res.error, "Error al guardar", "❌"); 
+            } else {
+                if (loader) loader.style.display = 'none';
+                customAlert("Error: " + res.error, "Error al guardar", "❌");
             }
-        } catch (e) { 
-            if(loader) loader.style.display = 'none';
-            customAlert("Error de conexión con el servidor", "Error de red", "🔌"); 
+        } catch (e) {
+            if (loader) loader.style.display = 'none';
+            customAlert("Error de conexión con el servidor", "Error de red", "🔌");
         }
 
         confirmOrderBtn.innerHTML = 'GUARDAR Y FINALIZAR';

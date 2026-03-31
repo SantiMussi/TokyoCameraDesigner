@@ -1,4 +1,8 @@
 <?php
+/* PROPIEDAD DE TOKYO SHOP - BUENOS AIRES, ARGENTINA
+Diseño y Desarrollo por Santiago M. (2026)
+Cualquier copia no autorizada será reportada.
+*/
 require_once 'db.php';
 header('Content-Type: application/json');
 
@@ -85,10 +89,13 @@ if ($savedAny) {
     try {
         global $pdo, $conn, $conexion;
         $db = null;
-        if (isset($pdo)) $db = $pdo;
-        elseif (isset($conn)) $db = $conn;
-        elseif (isset($conexion)) $db = $conexion;
-        
+        if (isset($pdo))
+            $db = $pdo;
+        elseif (isset($conn))
+            $db = $conn;
+        elseif (isset($conexion))
+            $db = $conexion;
+
         if ($db) {
             $stmt = $db->prepare("INSERT INTO pedidos (id_orden, modelo, storage, nombre_cliente, email, whatsapp, url_mockup, url_carpeta, estado_pago) VALUES (:id_orden, :modelo, :storage, :nombre_cliente, :email, :whatsapp, :url_mockup, :url_carpeta, 'pendiente')");
             $stmt->execute([

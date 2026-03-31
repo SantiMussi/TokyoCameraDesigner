@@ -1,4 +1,8 @@
 <?php
+/* PROPIEDAD DE TOKYO SHOP - BUENOS AIRES, ARGENTINA
+Diseño y Desarrollo por Santiago M. (2026)
+Cualquier copia no autorizada será reportada.
+*/
 require_once 'admin_auth.php';
 check_login();
 
@@ -6,14 +10,14 @@ check_login();
 if (isset($_POST['delete_pedido'])) {
     $stmt = $pdo->prepare("DELETE FROM pedidos WHERE id = ?");
     $stmt->execute([$_POST['pedido_id']]);
-    
+
     if (!empty($_POST['carpeta'])) {
         $ruta_relativa = ltrim($_POST['carpeta'], '/');
         $dir_path = __DIR__ . '/' . $ruta_relativa;
         if (is_dir($dir_path)) {
             $files = glob($dir_path . '/*');
-            foreach($files as $file){
-                if(is_file($file)) {
+            foreach ($files as $file) {
+                if (is_file($file)) {
                     unlink($file);
                 }
             }
@@ -529,7 +533,7 @@ foreach ($pedidos as $p) {
                         </td>
                         <td>
                             <span class="status-badge status-<?php echo strtolower($p['estado_pago']); ?>">
-                                    <?php echo htmlspecialchars($p['estado_pago']); ?>
+                                <?php echo htmlspecialchars($p['estado_pago']); ?>
                             </span>
                         </td>
                         <td>
@@ -553,10 +557,13 @@ foreach ($pedidos as $p) {
                                     </select>
                                     <button type="submit" name="update_status" class="btn-update">Guardar</button>
                                 </form>
-                                <form method="POST" style="margin:0;" id="deleteForm_<?php echo htmlspecialchars($p['id']); ?>" onsubmit="event.preventDefault(); customConfirm('¿Estás seguro de que deseas eliminar este pedido y todos sus archivos? Esta acción no se puede deshacer.', () => { document.getElementById('deleteForm_<?php echo htmlspecialchars($p['id']); ?>').submit(); }, 'Eliminar pedido', '🗑️');">
+                                <form method="POST" style="margin:0;"
+                                    id="deleteForm_<?php echo htmlspecialchars($p['id']); ?>"
+                                    onsubmit="event.preventDefault(); customConfirm('¿Estás seguro de que deseas eliminar este pedido y todos sus archivos? Esta acción no se puede deshacer.', () => { document.getElementById('deleteForm_<?php echo htmlspecialchars($p['id']); ?>').submit(); }, 'Eliminar pedido', '🗑️');">
                                     <input type="hidden" name="delete_pedido" value="1">
                                     <input type="hidden" name="pedido_id" value="<?php echo htmlspecialchars($p['id']); ?>">
-                                    <input type="hidden" name="carpeta" value="<?php echo htmlspecialchars($p['url_carpeta']); ?>">
+                                    <input type="hidden" name="carpeta"
+                                        value="<?php echo htmlspecialchars($p['url_carpeta']); ?>">
                                     <button type="submit" class="btn-delete" title="Eliminar pedido">🗑️</button>
                                 </form>
                             </div>
@@ -618,18 +625,35 @@ foreach ($pedidos as $p) {
     </div>
 
     <!-- Custom Confirm Modal -->
-    <div id="customConfirm" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:10001; justify-content:center; align-items:center; backdrop-filter: blur(4px); font-family: 'Inter', sans-serif;">
-        <div style="background:white; padding:30px; border-radius:16px; width:90%; max-width:400px; text-align:center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); animation: pop 0.3s ease-out;">
+    <div id="customConfirm"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:10001; justify-content:center; align-items:center; backdrop-filter: blur(4px); font-family: 'Inter', sans-serif;">
+        <div
+            style="background:white; padding:30px; border-radius:16px; width:90%; max-width:400px; text-align:center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); animation: pop 0.3s ease-out;">
             <div id="customConfirmIcon" style="font-size:40px; margin-bottom:10px;">❓</div>
-            <h3 id="customConfirmTitle" style="margin:0 0 10px 0; color:#333; font-weight:700; font-size:20px;">Confirmar</h3>
+            <h3 id="customConfirmTitle" style="margin:0 0 10px 0; color:#333; font-weight:700; font-size:20px;">
+                Confirmar</h3>
             <p id="customConfirmMsg" style="margin:0 0 20px 0; color:#666; font-size:15px; line-height:1.5;"></p>
             <div style="display:flex; justify-content:center; gap:10px;">
-                <button type="button" onclick="document.getElementById('customConfirm').style.display='none'" style="flex:1; background:#f1f1f1; color:#555; border:none; padding:10px 20px; border-radius:8px; font-weight:600; cursor:pointer; font-size:15px; transition:0.2s;">Cancelar</button>
-                <button type="button" id="customConfirmOk" style="flex:1; background:#ef4444; color:white; border:none; padding:10px 20px; border-radius:8px; font-weight:600; cursor:pointer; font-size:15px; transition:0.2s;">Confirmar</button>
+                <button type="button" onclick="document.getElementById('customConfirm').style.display='none'"
+                    style="flex:1; background:#f1f1f1; color:#555; border:none; padding:10px 20px; border-radius:8px; font-weight:600; cursor:pointer; font-size:15px; transition:0.2s;">Cancelar</button>
+                <button type="button" id="customConfirmOk"
+                    style="flex:1; background:#ef4444; color:white; border:none; padding:10px 20px; border-radius:8px; font-weight:600; cursor:pointer; font-size:15px; transition:0.2s;">Confirmar</button>
             </div>
         </div>
     </div>
-    <style>@keyframes pop { 0% { opacity:0; transform:scale(0.9); } 100% { opacity:1; transform:scale(1); } }</style>
+    <style>
+        @keyframes pop {
+            0% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    </style>
 
     <!-- Data para el JS -->
     <script>
@@ -711,13 +735,13 @@ foreach ($pedidos as $p) {
         // Modal Function
         function customConfirm(msg, onConfirm, title = 'Confirmar', icon = '❓') {
             const modal = document.getElementById('customConfirm');
-            if(!modal) { if(confirm(msg)) onConfirm(); return; }
+            if (!modal) { if (confirm(msg)) onConfirm(); return; }
             document.getElementById('customConfirmTitle').innerText = title;
             document.getElementById('customConfirmMsg').innerText = msg;
             document.getElementById('customConfirmIcon').innerText = icon;
             modal.style.display = 'flex';
-            
-            document.getElementById('customConfirmOk').onclick = function() {
+
+            document.getElementById('customConfirmOk').onclick = function () {
                 modal.style.display = 'none';
                 onConfirm();
             };
