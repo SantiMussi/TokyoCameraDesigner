@@ -168,7 +168,21 @@ foreach ($pedidos as $p) {
                                     <span class="badge-qty"><?= isset($p['cantidad']) ? htmlspecialchars($p['cantidad']) : '1' ?>x</span>
                                     Cámara <?= htmlspecialchars($p['modelo']) ?>
                                 </div>
-                                <span class="text-muted text-sm">📸 <?= htmlspecialchars($p['storage']) ?> fotos</span>
+                                <span class="text-muted text-sm d-block mb-1">📸 <?= htmlspecialchars($p['storage']) ?> fotos</span>
+                                <?php
+                                    $storage = $p['storage'];
+                                    $qty = isset($p['cantidad']) ? (int)$p['cantidad'] : 1;
+                                    $basePrices = ['18' => 50000, '24' => 55000, '36' => 65000];
+                                    $priceUnit = isset($basePrices[$storage]) ? $basePrices[$storage] : 50000;
+                                    $totalCam = $priceUnit * $qty;
+                                    $designCost = ($qty >= 10) ? 0 : 45000;
+                                    $totalOrder = $totalCam + $designCost;
+                                ?>
+                                <div style="margin-top: 5px;">
+                                    <span class="badge" style="background: rgba(255, 123, 180, 0.1); color: var(--primary-color); padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 13px; border: 1px solid rgba(255, 123, 180, 0.3);">
+                                        Total: $<?= number_format($totalOrder, 0, ',', '.') ?>
+                                    </span>
+                                </div>
                             </td>
                             <td>
                                 <span class="status-badge status-<?= $estadoClass ?>" id="badge-<?= $p['id'] ?>">
