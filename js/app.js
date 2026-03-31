@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.onload = function (f) {
             const tempImg = new Image();
             tempImg.onload = function () {
-                if (tempImg.width < 1500 || tempImg.height < 1500) {
+                if (tempImg.width < 1000 || tempImg.height < 1000) {
                     showToast("⚠️ Esta imagen tiene baja resolución. Podría salir pixelada al imprimir.");
                 }
                 fabric.Image.fromURL(f.target.result, (img) => {
