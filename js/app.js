@@ -481,7 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Generar Mockup combinado usando tokyomockupbg.jpg como fondo real
         const generateCombinedMockup = async (frenteB64, dorsoB64) => {
             const c = document.createElement('canvas');
-            c.width = 1200;
+            c.width = 1100;
             c.height = 1600;
             const ctx = c.getContext('2d');
 
