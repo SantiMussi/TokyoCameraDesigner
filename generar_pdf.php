@@ -21,6 +21,7 @@ $storage = isset($data['storage']) ? $data['storage'] : '24';
 $nombre_cliente = isset($data['nombre_cliente']) ? $data['nombre_cliente'] : '';
 $email = isset($data['email']) ? $data['email'] : '';
 $whatsapp = isset($data['whatsapp']) ? $data['whatsapp'] : '';
+$cantidad = isset($data['cantidad']) ? (int)$data['cantidad'] : 1;
 
 $mockup = isset($data['mockup']) ? $data['mockup'] : null;
 $imagenes_utilizadas = isset($data['imagenes_utilizadas']) ? $data['imagenes_utilizadas'] : [];
@@ -97,11 +98,12 @@ if ($savedAny) {
             $db = $conexion;
 
         if ($db) {
-            $stmt = $db->prepare("INSERT INTO pedidos (id_orden, modelo, storage, nombre_cliente, email, whatsapp, url_mockup, url_carpeta, estado_pago) VALUES (:id_orden, :modelo, :storage, :nombre_cliente, :email, :whatsapp, :url_mockup, :url_carpeta, 'pendiente')");
+            $stmt = $db->prepare("INSERT INTO pedidos (id_orden, modelo, storage, cantidad, nombre_cliente, email, whatsapp, url_mockup, url_carpeta, estado_pago) VALUES (:id_orden, :modelo, :storage, :cantidad, :nombre_cliente, :email, :whatsapp, :url_mockup, :url_carpeta, 'pendiente')");
             $stmt->execute([
                 ':id_orden' => $id_orden,
                 ':modelo' => $modelo,
                 ':storage' => $storage,
+                ':cantidad' => $cantidad,
                 ':nombre_cliente' => $nombre_cliente,
                 ':email' => $email,
                 ':whatsapp' => $whatsapp,

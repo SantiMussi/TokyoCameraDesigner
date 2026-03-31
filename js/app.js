@@ -23,7 +23,26 @@ document.addEventListener('DOMContentLoaded', () => {
         model: 'V1',
         face: 'FRENTE',
         storage: '18',
+        quantity: 1
     };
+
+    // Lógica selector de cantidad
+    const btnMinus = document.getElementById('btnMinus');
+    const btnPlus = document.getElementById('btnPlus');
+    const qtyDisplay = document.getElementById('qtyDisplay');
+
+    if (btnMinus && btnPlus && qtyDisplay) {
+        btnMinus.addEventListener('click', () => {
+            if (state.quantity > 1) {
+                state.quantity--;
+                qtyDisplay.textContent = state.quantity;
+            }
+        });
+        btnPlus.addEventListener('click', () => {
+            state.quantity++;
+            qtyDisplay.textContent = state.quantity;
+        });
+    }
 
     const templates = {
         'V1-FRENTE': 'Fotos/DESCARTABLEV1FRENTE.png',
@@ -408,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const payload = {
-            modelo: state.model, storage: state.storage,
+            modelo: state.model, storage: state.storage, cantidad: state.quantity,
             nombre_cliente: nameVal, email: emailVal, whatsapp: telVal,
             imagen_frente: activeFace === 'FRENTE' ? activeClean : otherClean,
             imagen_dorso: activeFace === 'DORSO' ? activeClean : otherClean,
