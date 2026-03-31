@@ -14,12 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
         width: CANVAS_WIDTH,
         height: CANVAS_HEIGHT,
         backgroundColor: "#ffffff",
-        preserveObjectStacking: true
-    });
-
-    // Bloquear estiramiento no proporcional por defecto
-    fabric.Object.prototype.set({
-        lockUniScaling: true
+        preserveObjectStacking: true,
+        uniScaleTransform: true
     });
 
     // 2. Estado de la Aplicación
