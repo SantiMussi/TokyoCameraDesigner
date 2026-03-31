@@ -21,7 +21,7 @@ $storage = isset($data['storage']) ? $data['storage'] : '24';
 $nombre_cliente = isset($data['nombre_cliente']) ? $data['nombre_cliente'] : '';
 $email = isset($data['email']) ? $data['email'] : '';
 $whatsapp = isset($data['whatsapp']) ? $data['whatsapp'] : '';
-$cantidad = isset($data['cantidad']) ? (int)$data['cantidad'] : 1;
+$cantidad = isset($data['cantidad']) ? (int) $data['cantidad'] : 1;
 
 $mockup = isset($data['mockup']) ? $data['mockup'] : null;
 $imagenes_utilizadas = isset($data['imagenes_utilizadas']) ? $data['imagenes_utilizadas'] : [];
@@ -45,9 +45,11 @@ function saveBase64Image($base64String, $outputFile)
         return false;
 
     // Tarea de seguridad: Verificación estricta de MIME type
-    if (strpos($base64String, 'data:image/png') !== 0 && 
-        strpos($base64String, 'data:image/jpeg') !== 0 && 
-        strpos($base64String, 'data:image/jpg') !== 0) {
+    if (
+        strpos($base64String, 'data:image/png') !== 0 &&
+        strpos($base64String, 'data:image/jpeg') !== 0 &&
+        strpos($base64String, 'data:image/jpg') !== 0
+    ) {
         http_response_code(403);
         echo json_encode(["success" => false, "error" => "Violación de seguridad: MIME type no está permitido. Sólo PNG o JPEG."]);
         exit;
@@ -64,7 +66,7 @@ function saveBase64Image($base64String, $outputFile)
 
 $path_frente = $orden_dir . 'frente.png';
 $path_dorso = $orden_dir . 'dorso.png';
-$path_mockup = $orden_dir . 'mockup.png'; // Requerido especificamente "el mockup de la forma que te mandé"
+$path_mockup = $orden_dir . 'mockup.png';
 
 $savedAny = false;
 
