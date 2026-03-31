@@ -480,6 +480,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         // Generar Mockup combinado adaptativo (Resolución HD)
+        // Generar Mockup combinado adaptativo (Resolución HD + Parche Blanco)
         const generateCombinedMockup = async (frenteB64, dorsoB64) => {
             const loadImg = (src) => new Promise(res => {
                 if (!src) return res(null);
@@ -489,12 +490,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 img.src = src;
             });
 
-            // 1. Cargar el fondo PRIMERO para saber su resolución real
+            // 1. Cargar el fondo
             const backgroundImg = await loadImg('/Fotos/tokyomockupbg.jpg');
 
             const c = document.createElement('canvas');
 
-            // Usar la resolución nativa y exacta de la imagen de fondo, o 1200x1600 por defecto
             if (backgroundImg) {
                 c.width = backgroundImg.width;
                 c.height = backgroundImg.height;
@@ -504,8 +504,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const ctx = c.getContext('2d');
-
-            // Forzar renderizado de Alta Calidad para que las cámaras no se pixelen al agrandarse
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
 
@@ -534,34 +532,60 @@ document.addEventListener('DOMContentLoaded', () => {
             let fImg = await loadImg(frenteB64);
             let dImg = await loadImg(dorsoB64);
 
-            // 3. Aplicar el filtro quirúrgico para remover el borde blanco
+            // 3. Aplicar el filtro para remover el borde blanco
             if (fImg) fImg = removeWhiteBorder(fImg);
             if (dImg) dImg = removeWhiteBorder(dImg);
 
-            // 4. Calcular proporciones matemáticas relativas al fondo
-            const targetW = c.width * 0.816; // 81.6% del ancho del lienzo 
+            const targetW = c.width * 0.816;
             const centerX = (c.width - targetW) / 2;
 
-            const frenteY = c.height * 0.143; // 14.3% del alto del lienzo
-            const dorsoY = c.height * 0.47;  // 53.1% del alto del lienzo 
+            const frenteY = c.height * 0.143;
+            const dorsoY = c.height * 0.48; // Acá subimos la cámara de abajo (antes 0.531)
 
-            // 5. Sombra paralela escalada dinámicamente según la resolución
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-            ctx.shadowBlur = c.width * 0.033;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = c.height * 0.015;
+            // Funciones de sombra (las separamos para que el parche blanco no tenga sombra)
+            const setupShadow = () => {
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+                ctx.shadowBlur = c.width * 0.033;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = c.height * 0.015;
+            };
+            const clearShadow = () => {
+                ctx.shadowColor = 'transparent';
+            };
 
-            // 6. Superponer las cámaras
+            // 4. Superponer las cámaras con tu TRUCO DEL PARCHE BLANCO
             if (fImg) {
                 let scale = targetW / fImg.width;
-                ctx.drawImage(fImg, centerX, frenteY, targetW, fImg.height * scale);
+                let h = fImg.height * scale;
+
+                // A. Dibujar el parche blanco detrás (sin sombra)
+                clearShadow();
+                ctx.fillStyle = '#ffffff';
+                const insetX = targetW * 0.12; // 12% de margen para no salirse de los bordes
+                const insetY = h * 0.12;
+                ctx.fillRect(centerX + insetX, frenteY + insetY, targetW - (insetX * 2), h - (insetY * 2));
+
+                // B. Dibujar la cámara con sus sombras
+                setupShadow();
+                ctx.drawImage(fImg, centerX, frenteY, targetW, h);
             }
             if (dImg) {
                 let scale = targetW / dImg.width;
-                ctx.drawImage(dImg, centerX, dorsoY, targetW, dImg.height * scale);
+                let h = dImg.height * scale;
+
+                // A. Dibujar el parche blanco detrás
+                clearShadow();
+                ctx.fillStyle = '#ffffff';
+                const insetX = targetW * 0.12;
+                const insetY = h * 0.12;
+                ctx.fillRect(centerX + insetX, dorsoY + insetY, targetW - (insetX * 2), h - (insetY * 2));
+
+                // B. Dibujar la cámara con sus sombras
+                setupShadow();
+                ctx.drawImage(dImg, centerX, dorsoY, targetW, h);
             }
 
-            ctx.shadowColor = 'transparent';
+            clearShadow();
             return c.toDataURL('image/jpeg', 0.95);
         };
 
