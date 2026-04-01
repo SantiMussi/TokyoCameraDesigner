@@ -60,6 +60,7 @@ body::before {
     gap: 2rem;
     box-shadow: 10px 0 30px rgba(74, 21, 45, 0.05); /* Soft plum shadow */
     z-index: 10;
+    overflow-y: auto;
 }
 
 header h1 {
