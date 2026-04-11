@@ -107,13 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
         'V2-DORSO': 'Fotos/DESCARTABLEV2DORSO.png'
     };
 
-    const siluetas = {
-        'V1-FRENTE': 'Fotos/SILUETAV1FRENTE.png',
-        'V1-DORSO': 'Fotos/SILUETAV1DORSO.png',
-        'V2-FRENTE': 'Fotos/SILUETAV2FRENTE.png',
-        'V2-DORSO': 'Fotos/SILUETAV2DORSO.png'
-    };
-
     const savedDesigns = {};
     let currentClipPath = null;
 
@@ -121,7 +114,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadTemplate(callback) {
         const key = `${state.model}-${state.face}`;
         const imgUrl = templates[key];
-        const siluetaUrl = siluetas[key];
 
         if (!imgUrl) {
             if (callback) callback();
@@ -147,23 +139,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Establecer como capa superior (Overlay)
             canvas.setOverlayImage(img, canvas.renderAll.bind(canvas));
 
-            // Cargar Silueta (Fondo blanco de la cámara por detrás)
-            if (siluetaUrl) {
-                fabric.Image.fromURL(siluetaUrl, (silImg) => {
-                    if (silImg) {
-                        silImg.set({
-                            originX: 'center', originY: 'center',
-                            left: CANVAS_WIDTH / 2, top: CANVAS_HEIGHT / 2,
-                            scaleX: scale, scaleY: scale,
-                            evented: false, selectable: false
-                        });
-                        // Establecer como capa inferior (Background)
-                        canvas.setBackgroundImage(silImg, canvas.renderAll.bind(canvas));
-                    }
-                });
-            } else {
-                canvas.setBackgroundImage(null, canvas.renderAll.bind(canvas));
-            }
+            // Aseguramos que el fondo sea blanco sólido para evitar el patrón cuadriculado
+            canvas.backgroundColor = '#ffffff';
+            canvas.setBackgroundImage(null, canvas.renderAll.bind(canvas));
 
             currentClipPath = new fabric.Rect({
                 left: CANVAS_WIDTH / 2, top: CANVAS_HEIGHT / 2,
@@ -359,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
         customConfirm('¿Estás seguro de que deseas limpiar el diseño actual?', () => {
             const objects = canvas.getObjects();
             objects.forEach(obj => {
-                if (obj !== canvas.overlayImage && obj !== canvas.backgroundImage && obj.type !== 'rect') {
+                if (obj !== canvas.overlayImage && obj.type !== 'rect') {
                     canvas.remove(obj);
                 }
             });
@@ -524,7 +502,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             // 1. Cargar el fondo
-            const backgroundImg = await loadImg('/Fotos/tokyomockupbg.jpg');
+            const bgFilename = state.model === 'V2' ? 'tokyobgV2.png' : 'tokyobgV1.png';
+            const backgroundImg = await loadImg('/Fotos/' + bgFilename);
 
             const c = document.createElement('canvas');
 
