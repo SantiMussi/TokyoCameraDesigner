@@ -502,7 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             // 1. Cargar el fondo
-            const bgFilename = state.model === 'V2' ? 'tokyobgV2.png' : 'tokyobgV1.png';
+            const bgFilename = state.model === 'V2' ? 'tokyobgV2_2.png' : 'tokyobgV1.png';
             const backgroundImg = await loadImg('/Fotos/' + bgFilename);
 
             const c = document.createElement('canvas');
