@@ -3,13 +3,14 @@
 Diseño y Desarrollo por Santiago M. (2026)
 Cualquier copia no autorizada será reportada.
 */
+require_once 'security_headers.php';
 session_start();
 require_once 'db.php';
 
 $error = ' ';
 
 $ip = $_SERVER['REMOTE_ADDR'];
-$intentos_file = 'intentos_login.json';
+$intentos_file = __DIR__ . '/intentos_login.json';
 $intentos_data = [];
 
 if (file_exists($intentos_file)) {
@@ -40,36 +41,49 @@ if ($datos_ip['intentos'] >= $max_intentos) {
     }
 }
 
+// Generar token CSRF para el formulario de login (VULN-05)
+if (empty($_SESSION['login_csrf'])) {
+    $_SESSION['login_csrf'] = bin2hex(random_bytes(32));
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$bloqueado) {
-    $user = $_POST['user'];
-    $pass = $_POST['pass'];
-
-    $stmt = $pdo->prepare("SELECT * FROM admins WHERE usuario = ?");
-    $stmt->execute([$user]);
-    $admin = $stmt->fetch();
-
-    if ($admin && password_verify($pass, $admin['password'])) {
-        // Login exitoso: Resetear contador para la IP
-        $datos_ip['intentos'] = 0;
-        $datos_ip['ultimo_intento'] = time();
-        $intentos_data[$ip] = $datos_ip;
-        file_put_contents($intentos_file, json_encode($intentos_data, JSON_PRETTY_PRINT));
-
-        // 1. Prevención Fijación de Sesión (Session Fixation)
-        session_regenerate_id(true);
-        
-        $_SESSION['admin_id'] = $admin['id'];
-        header('Location: admin.php'); // Te manda al dashboard
-        exit;
+    // Validación CSRF del login (VULN-05)
+    if (!isset($_POST['login_csrf']) || !hash_equals($_SESSION['login_csrf'], $_POST['login_csrf'])) {
+        $error = 'Error de seguridad. Recargá la página.';
     } else {
-        // Login incorrecto: Sumar intento
-        $datos_ip['intentos'] += 1;
-        $datos_ip['ultimo_intento'] = time();
-        $intentos_data[$ip] = $datos_ip;
-        file_put_contents($intentos_file, json_encode($intentos_data, JSON_PRETTY_PRINT));
+        $user = $_POST['user'];
+        $pass = $_POST['pass'];
 
-        $error = 'Usuario o contraseña incorrectos.';
+        $stmt = $pdo->prepare("SELECT * FROM admins WHERE usuario = ?");
+        $stmt->execute([$user]);
+        $admin = $stmt->fetch();
+
+        if ($admin && password_verify($pass, $admin['password'])) {
+            // Login exitoso: Resetear contador para la IP
+            $datos_ip['intentos'] = 0;
+            $datos_ip['ultimo_intento'] = time();
+            $intentos_data[$ip] = $datos_ip;
+            file_put_contents($intentos_file, json_encode($intentos_data, JSON_PRETTY_PRINT));
+
+            // 1. Prevención Fijación de Sesión (Session Fixation)
+            session_regenerate_id(true);
+
+            $_SESSION['admin_id'] = $admin['id'];
+            header('Location: admin.php'); // Te manda al dashboard
+            exit;
+        } else {
+            // Login incorrecto: Sumar intento
+            $datos_ip['intentos'] += 1;
+            $datos_ip['ultimo_intento'] = time();
+            $intentos_data[$ip] = $datos_ip;
+            file_put_contents($intentos_file, json_encode($intentos_data, JSON_PRETTY_PRINT));
+
+            $error = 'Usuario o contraseña incorrectos.';
+        }
     }
+
+    // Rotar token CSRF después de cada intento
+    $_SESSION['login_csrf'] = bin2hex(random_bytes(32));
 }
 ?>
 
@@ -126,8 +140,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$bloqueado) {
     <div class="login-card">
         <h2 style="color: #ff7bb4;">Tokyo Admin ✨</h2>
         <?php if ($error): ?>
-            <p style="color:red; font-size:12px;"><?php echo $error; ?></p> <?php endif; ?>
+            <p style="color:red; font-size:12px;"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></p>
+        <?php endif; ?>
         <form method="POST">
+            <input type="hidden" name="login_csrf" value="<?= htmlspecialchars($_SESSION['login_csrf'], ENT_QUOTES, 'UTF-8') ?>">
             <input type="text" name="user" placeholder="Usuario" required>
             <input type="password" name="pass" placeholder="Contraseña" required>
             <button type="submit">ENTRAR</button>

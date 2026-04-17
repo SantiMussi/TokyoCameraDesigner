@@ -1,0 +1,147 @@
+# =========================================================
+# TOKYO SHOP — .htaccess Seguro
+# Auditoría SAST — 2026-04-17
+# =========================================================
+
+# Desactivar la visualización de carpetas
+Options -Indexes
+
+# =========================
+# SECURITY HEADERS (VULN-09)
+# =========================
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+
+    # Descomentar si el sitio usa HTTPS:
+    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+    # CSP — Ajustar dominios y hashes según necesidad real
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self';"
+</IfModule>
+
+# =========================
+# BLOQUEO DE ARCHIVOS SENSIBLES (VULN-06, VULN-13)
+# =========================
+
+# Bloquear acceso al archivo de intentos de login
+<Files "intentos_login.json">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</Files>
+
+# Bloquear acceso directo a db.php (credenciales)
+<Files "db.php">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</Files>
+
+# Bloquear acceso directo a admin_auth.php
+<Files "admin_auth.php">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</Files>
+
+# Bloquear acceso directo a security_headers.php
+<Files "security_headers.php">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</Files>
+
+# Bloquear acceso a archivos de rate limiting
+<Files "rate_limit.json">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</Files>
+
+# Bloquear cualquier archivo .json (excepto precios.json que lo necesita el frontend)
+# Si en un futuro movés precios a un endpoint PHP, descomentar esto y borrar lo de abajo:
+# <FilesMatch "\.json$">
+#     Require all denied
+# </FilesMatch>
+
+# Bloquear archivos ocultos (.git, .env, etc.)
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# =========================
+# BLOQUEO DE EJECUCIÓN PHP EN /pedidos/ (VULN-12)
+# =========================
+# Previene que un archivo subido maliciosamente se ejecute como PHP
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Bloquear ejecución de PHP dentro de /pedidos/
+    RewriteRule ^pedidos/.*\.ph(p[0-9]?|tml|ps)$ - [F,L]
+
+    # 1. Redirigir index.html a la raíz / (SEO y limpieza)
+    RewriteCond %{THE_REQUEST} ^[A-Z]{3,9}\ /index\.html\ HTTP/
+    RewriteRule ^index\.html$ / [R=301,L]
+
+    # 2. SOPORTE PARA ROUTING
+    # Si no es un archivo ni carpeta real, mandar a index.html
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule . /index.html [L]
+
+    # 3. Ocultar .php
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}\.php -f
+    RewriteRule ^(.*)$ $1.php [L]
+</IfModule>
+
+# =========================
+# PROTECCIÓN ADICIONAL EN CARPETA DE UPLOADS
+# =========================
+# Forzar Content-Type correcto en archivos subidos
+<IfModule mod_mime.c>
+    # Dentro de /pedidos/ solo servir como imágenes
+    AddType image/png .png
+    AddType image/jpeg .jpg .jpeg
+</IfModule>
+
+# Deshabilitar ejecución de CGI/scripts en todo el sitio (salvo PHP controlado)
+Options -ExecCGI
+
+# Limitar tamaño de uploads (25MB — coincide con la validación PHP)
+<IfModule mod_php.c>
+    php_value upload_max_filesize 25M
+    php_value post_max_size 30M
+    php_value max_input_time 120
+</IfModule>

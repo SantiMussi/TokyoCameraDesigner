@@ -2,3 +2,5 @@ db.php
 sess_*
 config_admin.php
 pedidos/
+intentos_login.json
+rate_limit.json

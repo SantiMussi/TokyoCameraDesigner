@@ -8,24 +8,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('HTTP/1.1 403 Forbidden');
         die(json_encode(['success' => false, 'error' => 'Error de seguridad: Token CSRF inválido.']));
     }
+    // Rotar token CSRF después de cada POST válido (VULN-10)
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
 
 
 if (isset($_POST['ajax_update_status'])) {
     header('Content-Type: application/json');
+
+    // Validación de valores permitidos (VULN-14)
+    $estados_validos = ['pendiente', 'impreso', 'empaquetado', 'entregado'];
+    $nuevo_estado = $_POST['nuevo_estado'] ?? '';
+    $pedido_id = (int) ($_POST['pedido_id'] ?? 0);
+
+    if (!in_array($nuevo_estado, $estados_validos) || $pedido_id <= 0) {
+        echo json_encode(['success' => false, 'error' => 'Valores inválidos.', 'new_csrf' => $_SESSION['csrf_token']]);
+        exit;
+    }
+
     try {
         $stmt = $pdo->prepare("UPDATE pedidos SET estado_pago = ? WHERE id = ?");
-        $stmt->execute([$_POST['nuevo_estado'], $_POST['pedido_id']]);
-        echo json_encode(['success' => true]);
+        $stmt->execute([$nuevo_estado, $pedido_id]);
+        echo json_encode(['success' => true, 'new_csrf' => $_SESSION['csrf_token']]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false]);
+        error_log('[TOKYO] Error update estado: ' . $e->getMessage());
+        echo json_encode(['success' => false, 'new_csrf' => $_SESSION['csrf_token']]);
     }
     exit;
 }
 
 if (isset($_POST['delete_pedido'])) {
-    $pedido_id = $_POST['pedido_id'];
+    $pedido_id = (int) ($_POST['pedido_id'] ?? 0);
+
+    if ($pedido_id <= 0) {
+        header("Location: admin.php");
+        exit;
+    }
 
     $stmt = $pdo->prepare("SELECT url_carpeta FROM pedidos WHERE id = ?");
     $stmt->execute([$pedido_id]);
@@ -33,16 +52,17 @@ if (isset($_POST['delete_pedido'])) {
 
     if ($pedido && !empty($pedido['url_carpeta'])) {
         $ruta_relativa = ltrim($pedido['url_carpeta'], '/');
-        if (strpos($ruta_relativa, '..') === false) {
-            $dir_path = __DIR__ . '/' . $ruta_relativa;
-            if (is_dir($dir_path)) {
-                $files = glob($dir_path . '/*');
-                foreach ($files as $file) {
-                    if (is_file($file))
-                        unlink($file);
-                }
-                rmdir($dir_path);
+        // Path Traversal fix: validar con realpath() (VULN-08)
+        $dir_path = realpath(__DIR__ . '/' . $ruta_relativa);
+        $safe_base = realpath(__DIR__ . '/pedidos');
+
+        if ($dir_path && $safe_base && strpos($dir_path, $safe_base) === 0 && is_dir($dir_path)) {
+            $files = glob($dir_path . '/*');
+            foreach ($files as $file) {
+                if (is_file($file))
+                    unlink($file);
             }
+            rmdir($dir_path);
         }
     }
 
@@ -425,6 +445,9 @@ foreach ($pedidos as $p) {
             });
         });
 
+        // Token CSRF dinámico (se actualiza tras cada request exitoso — VULN-10)
+        let csrfToken = '<?= isset($_SESSION["csrf_token"]) ? $_SESSION["csrf_token"] : "" ?>';
+
         // Actualización AJAX
         document.querySelectorAll('.status-select').forEach(select => {
             select.addEventListener('change', async function () {
@@ -435,11 +458,20 @@ foreach ($pedidos as $p) {
                 formData.append('ajax_update_status', '1');
                 formData.append('pedido_id', pedidoId);
                 formData.append('nuevo_estado', nuevoEstado);
-                formData.append('csrf_token', '<?= isset($_SESSION["csrf_token"]) ? $_SESSION["csrf_token"] : "" ?>');
+                formData.append('csrf_token', csrfToken);
 
                 try {
                     const res = await fetch('admin.php', { method: 'POST', body: formData });
                     const data = await res.json();
+
+                    // Actualizar token con el nuevo que devuelve el server
+                    if (data.new_csrf) {
+                        csrfToken = data.new_csrf;
+                        // Actualizar todos los inputs hidden de CSRF en la página
+                        document.querySelectorAll('input[name="csrf_token"]').forEach(input => {
+                            input.value = csrfToken;
+                        });
+                    }
 
                     if (data.success) {
                         const badge = document.getElementById(`badge-${pedidoId}`);
